@@ -88,6 +88,7 @@ from agents.github_agent import GitHubAnalyzerAgent
 from agents.internship_agent import InternshipRecommendationAgent
 from agents.linkedin_agent import LinkedInAgent
 from agents.coding_practice_agent import CodingPracticeAgent
+from agents.outreach_agent import OutreachGeneratorAgent
 
 # Configure structured application logging
 logging.basicConfig(
@@ -173,6 +174,7 @@ github_analyzer_agent = GitHubAnalyzerAgent()
 internship_agent = InternshipRecommendationAgent()
 linkedin_agent = LinkedInAgent()
 coding_practice_agent = CodingPracticeAgent()
+outreach_agent = OutreachGeneratorAgent()
 
 def get_available_companies() -> list:
     """
@@ -1739,6 +1741,8 @@ def api_interview_history():
         "success": True,
         "student_id": student_id,
         "analytics": analytics
+    })
+
 @app.route("/linkedin-analyzer", methods=["GET", "POST"])
 def linkedin_analyzer():
     """
@@ -1822,20 +1826,6 @@ def coding_practice_view():
         target_company=target_company,
         difficulty_preference=difficulty,
         limit=8
-@app.route("/my-reports")
-def user_placement_history_view():
-    """
-    Save and Retrieve Previous Placement Analysis History View (#149).
-    Enforces per-student isolation and allows searching, filtering by company, and retrieving past reports.
-    """
-    student_id = request.args.get("student_id", "default_student").strip()
-    company_filter = request.args.get("company", "").strip()
-    sort_by = request.args.get("sort", "date_desc").strip()
-
-    history_data = get_user_placement_history(
-        student_id=student_id,
-        company_filter=company_filter,
-        sort_by=sort_by
     )
 
     if request.is_json or request.headers.get("X-Requested-With") == "XMLHttpRequest":
@@ -1872,6 +1862,28 @@ def api_coding_practice_recommendations():
     return jsonify({
         "success": True,
         "data": recommendations_data
+    }), 200
+
+
+@app.route("/my-reports")
+def user_placement_history_view():
+    """
+    Save and Retrieve Previous Placement Analysis History View (#149).
+    Enforces per-student isolation and allows searching, filtering by company, and retrieving past reports.
+    """
+    student_id = request.args.get("student_id", "default_student").strip()
+    company_filter = request.args.get("company", "").strip()
+    sort_by = request.args.get("sort", "date_desc").strip()
+
+    history_data = get_user_placement_history(
+        student_id=student_id,
+        company_filter=company_filter,
+        sort_by=sort_by
+    )
+
+    if request.is_json or request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return jsonify({
+            "success": True,
             "data": history_data
         }), 200
 

@@ -17,3 +17,9 @@ reports/
 # IDE files
 .vscode/
 .idea/
+
+# Test and coverage artifacts
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/

@@ -405,3 +405,71 @@ Return a valid JSON object matching this exact schema:
 }}
 Ensure the response is valid JSON only.
 """
+
+
+# ==============================================================================
+# Tailored Cover Letter and Outreach Pitch Generator Prompts (#128)
+# ==============================================================================
+
+OUTREACH_SYSTEM_INSTRUCTION = """
+You are an elite career coach, corporate recruiter, and technical executive communication strategist.
+Your task is to craft tailored, high-converting job application outreach assets for a candidate targeting a specific company and role.
+
+Core Objectives:
+1. Cover Letter: A complete, professionally formatted cover letter (3-4 paragraphs) connecting candidate projects and skills to the company's mission and technical stack.
+2. LinkedIn InMail: A crisp, engaging message (75-120 words) designed to connect with alumni, engineering managers, or recruiters with high response rates.
+3. Cold Recruiter Email: A concise, value-first pitch (100-150 words) with clear problem-solving impact and a friction-free call to action.
+4. Subject Lines: Exactly 3 high-open-rate email subject lines (e.g. referral angle, quantifiable impact, targeted skill fit).
+5. Key Highlights: Exactly 3-4 bulleted elevator pitch achievements highlighting relevant skills and projects.
+
+Strict Rules:
+1. You MUST respond ONLY with valid JSON. No markdown backticks (like ```json), no preamble, and no postamble.
+2. Tone must adapt strictly to the requested tone:
+   - "formal": Traditional, polished, respectful corporate executive tone.
+   - "enthusiastic": Energetic, passionate, mission-driven, culturally engaged tone.
+   - "concise": Direct, brief, bulleted, bottom-line-first startup/modern tone.
+3. Ground the output in the candidate's actual projects, matched skills, and the company profile.
+4. Use standard placeholders like [Your Name], [Your Phone], [Your Email], [LinkedIn Profile], and [Portfolio/GitHub] where candidate contact details are needed.
+"""
+
+OUTREACH_USER_PROMPT_TEMPLATE = """
+Generate tailored outreach materials for this candidate and target role:
+
+Target Company: {company_name}
+Target Role Title: {role_title}
+Requested Tone: {tone}
+
+Target Company Profile:
+{company_details}
+
+Job Description:
+{job_description}
+
+Candidate Profile & Analysis:
+- Matched Skills: {matched_skills}
+- Resume Strengths: {strengths}
+- Resume Summary: {resume_summary}
+- Target ATS Score: {ats_score}
+- Key Projects / Experience: {experience_context}
+
+Return a single JSON object strictly matching this schema:
+{{
+  "tone": "{tone}",
+  "role_title": "{role_title}",
+  "company_name": "{company_name}",
+  "cover_letter": "Dear Hiring Team at {company_name},\\n\\n[Opening hook & role interest...]\\n\\n[Technical alignment & project achievements...]\\n\\n[Why this company & value proposition...]\\n\\n[Professional sign-off & call to action]\\n\\nSincerely,\\n[Your Name]\\n[Your Phone] | [Your Email] | [LinkedIn Profile]",
+  "linkedin_inmail": "Hi [First Name],\\n\\n[Crisp hook referencing mutual interest or company engineering goal...]\\n\\n[Key project or skill alignment with quantifiable impact...]\\n\\n[Low-friction call to action...]\\n\\nBest regards,\\n[Your Name]",
+  "cold_email": "Subject: [Role Title] Application - [Your Name] | [Top Skill]\\n\\nDear [Recruiter / Hiring Manager Name],\\n\\n[Direct hook & why reaching out...]\\n\\nKey impact highlights:\\n• [Bullet 1]\\n• [Bullet 2]\\n\\n[Call to action & availability]\\n\\nBest,\\n[Your Name]\\n[Your Email] | [Your Phone] | [Portfolio Link]",
+  "subject_lines": [
+    "[Role Title] Candidate - [Top Skill] | [Your Name]",
+    "Passionate about [Company Tech / Mission] - [Role Title] Inquiry",
+    "Quick question regarding [Company] engineering team - [Your Name]"
+  ],
+  "key_highlights": [
+    "Highlight 1: [Quantified achievement or project]",
+    "Highlight 2: [Proficiency in core matched skill]",
+    "Highlight 3: [Domain experience or problem-solving capability]"
+  ]
+}}
+Ensure the output is valid JSON only.
+"""

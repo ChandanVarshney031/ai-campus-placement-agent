@@ -992,3 +992,88 @@ html, body {
   }
 }
 
+/* ==============================================================================
+   Print-Friendly Placement Report Styles (#138)
+   ============================================================================== */
+@media print {
+  /* Hide non-printable UI chrome, navigation, buttons, and drawers */
+  nav.navbar,
+  footer,
+  .theme-toggle-btn,
+  .btn,
+  button,
+  .modal,
+  .offcanvas,
+  #shareProfileModal,
+  #btnShareProfileModal,
+  .btn-print-report,
+  #btnExportRoadmapMarkdown,
+  #btnCopyShareText,
+  #btnWebShare,
+  .btn-rewrite-line,
+  .copy-week-btn,
+  .progress-overlay {
+    display: none !important;
+  }
+
+  /* Reset body and background for crisp monochrome/inkjet reproduction */
+  body {
+    background-color: #ffffff !important;
+    color: #111111 !important;
+    font-size: 11pt !important;
+    line-height: 1.4 !important;
+  }
+
+  .container {
+    max-width: 100% !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Flatten card shadows and add solid thin borders */
+  .card,
+  .glass-card {
+    box-shadow: none !important;
+    border: 1px solid #cccccc !important;
+    background: #ffffff !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    margin-bottom: 16px !important;
+    padding: 14px !important;
+  }
+
+  /* Prevent page breaks inside critical metric blocks and tables */
+  .table-responsive {
+    overflow: visible !important;
+  }
+
+  table {
+    page-break-inside: auto !important;
+    width: 100% !important;
+  }
+
+  tr {
+    page-break-inside: avoid !important;
+    page-break-after: auto !important;
+  }
+
+  thead {
+    display: table-header-group !important;
+  }
+
+  /* Retain charts and score gauges */
+  canvas {
+    max-width: 100% !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Clean contrast for badges */
+  .badge {
+    border: 1px solid #777777 !important;
+    color: #000000 !important;
+    background-color: #f0f0f0 !important;
+  }
+}
+
+
