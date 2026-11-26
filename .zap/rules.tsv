@@ -1,0 +1,32 @@
+# OWASP ZAP Baseline Scan Rules File (.zap/rules.tsv) (#890)
+# Format: <rule_id>\t<ACTION>\t<Documented Review Reason>
+# Valid actions: FAIL, WARN, IGNORE
+# Every IGNORE entry MUST have a reviewed, written justification.
+
+# ------------------------------------------------------------------------------
+# 1. Critical Security Headers & Injections (FAIL on violation)
+# ------------------------------------------------------------------------------
+10020	FAIL	Anti-clickjacking Header (X-Frame-Options / CSP frame-ancestors): Missing anti-clickjacking protection is treated as a critical failure.
+10021	FAIL	X-Content-Type-Options Header Missing: Missing MIME-sniffing protection (nosniff) is treated as a critical failure.
+10038	FAIL	Content Security Policy (CSP) Header Not Set: Missing Content-Security-Policy header is treated as a critical failure.
+10063	FAIL	Permissions-Policy Header Not Set: Missing Permissions-Policy header is treated as a critical failure.
+10036	FAIL	Server Leaks Information via "Server" Header: Exposing detailed web server implementation details is treated as a failure.
+10017	FAIL	Cross-Site Scripting (Reflected): Reflected input without proper HTML escaping is treated as a critical failure.
+40012	FAIL	Cross Site Scripting (DOM Based): Unsanitized client-side injection is treated as a critical failure.
+90022	FAIL	Application Error Disclosure: Internal stack traces or secrets leaking in response bodies is treated as a critical failure.
+
+# ------------------------------------------------------------------------------
+# 2. Monitored Warnings (WARN)
+# ------------------------------------------------------------------------------
+10055	WARN	CSP - Wildcard Directive: Monitored for external asset sources.
+10098	WARN	Cross-Domain Misconfiguration: Monitored for unexpected external origin references.
+
+# ------------------------------------------------------------------------------
+# 3. Documented Reviewed Ignores (IGNORE - each with written justification)
+# ------------------------------------------------------------------------------
+10035	IGNORE	Strict-Transport-Security (HSTS): The local test and CI container environment runs over plain HTTP without TLS. In production, TLS termination and HSTS enforcement are handled upstream by reverse proxy/Cloudflare.
+10015	IGNORE	Incomplete or No Cache-Control and Pragma HTTP Header: Public static assets (Bootstrap CSS, icons, images, JS bundles) and login assets intentionally allow browser caching for performance. Sensitive routes use Cache-Control: no-store via apply_cache_headers.
+10027	IGNORE	Information Disclosure - Suspicious Comments: Non-sensitive HTML template comments and contributor guidance are retained in non-sensitive client templates for developer onboarding.
+10096	IGNORE	Timestamp Disclosure: Epoch timestamps are exposed in non-sensitive public session timestamps and cache-busting asset query parameters.
+10054	IGNORE	CSP - style-src unsafe-inline: Required for inline styling in Bootstrap components, KaTeX math typesetting, dynamic theme cards, and email preview widgets.
+10109	IGNORE	Modern Web Application: Single-page application navigation patterns and AJAX endpoints are expected.
