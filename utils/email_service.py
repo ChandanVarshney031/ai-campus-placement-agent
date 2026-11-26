@@ -311,6 +311,62 @@ class EmailNotificationService:
             plain_text=plain_text,
         )
 
+    def send_inactive_account_warning(
+        self,
+        recipient_email: str,
+        student_name: str = "",
+        days_remaining: int = 30,
+        login_url: str = "http://localhost:5000/login",
+        locale: str = DEFAULT_OUTPUT_LOCALE,
+    ) -> bool:
+        """
+        Dispatches an inactivity warning email before permanent account deletion (#888).
+        Informs the candidate of impending account & data purge, and that logging in cancels deletion.
+        """
+        import html
+
+        safe_name = html.escape(student_name or "there")
+        title = f"Action Required: Account Deletion in {days_remaining} Days"
+        headline = "Notice of Impending Account Deletion"
+        body_content = f"""
+            <p>Hello {safe_name},</p>
+            <p>Your AI Campus Placement Agent account has been inactive for an extended period.</p>
+            <p>To uphold data privacy standards and reduce unnecessary retention of personal records,
+            your account and all associated resumes, mock interviews, and application history are scheduled
+            for permanent deletion in <strong>{days_remaining} days</strong>.</p>
+            <p>If you wish to keep your account and retain your placement data, simply log in before the deadline.
+            Logging into your account immediately cancels this deletion request.</p>
+        """
+
+        html_content = self._format_html_layout(
+            title=title,
+            headline=headline,
+            body_content=body_content,
+            cta_url=login_url,
+            cta_text="Log In to Keep Account",
+            locale=locale,
+        )
+
+        plain_text = (
+            f"Hello {student_name or 'there'},\n\n"
+            f"Your AI Campus Placement Agent account has been inactive for an extended period.\n"
+            f"Your account and all associated resumes, mock interviews, and personal data are scheduled "
+            f"for permanent deletion in {days_remaining} days.\n\n"
+            f"To keep your account, simply log in before the deadline at: {login_url}\n"
+            f"Logging in immediately cancels this deletion request.\n"
+        )
+
+        subject = (
+            f"Action Required: Your account will be deleted in {days_remaining} days due to inactivity"
+        )
+
+        return self.send_email(
+            recipient_email=recipient_email,
+            subject=subject,
+            html_content=html_content,
+            plain_text=plain_text,
+        )
+
     def send_application_created_email(
         self,
         recipient_email: str,

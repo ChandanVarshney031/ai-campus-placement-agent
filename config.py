@@ -165,6 +165,11 @@ SLOW_REQUEST_THRESHOLD_MS = float(os.getenv("SLOW_REQUEST_THRESHOLD_MS", "500.0"
 PERFORMANCE_RETENTION_DAYS = int(os.getenv("PERFORMANCE_RETENTION_DAYS", "30"))
 EXCLUDE_STATIC_PERFORMANCE = os.getenv("EXCLUDE_STATIC_PERFORMANCE", "true").lower() in ("true", "1", "yes")
 
+# Inactive Account Lifecycle & Retention Settings (#888)
+# Default is 0 (off / disabled). When set to a positive integer (e.g. 365),
+# accounts with no login or activity for that period are warned and then deleted.
+INACTIVE_ACCOUNT_DAYS = int(os.getenv("INACTIVE_ACCOUNT_DAYS", "0"))
+
 # SMTP & Transactional Email Configurations (#186, #298)
 SMTP_SERVER = os.getenv("SMTP_SERVER", "localhost")
 SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
@@ -221,6 +226,8 @@ class Config:
     MAX_JSON_PAYLOAD_BYTES = MAX_JSON_PAYLOAD_BYTES
     MAX_CSV_FILE_SIZE_BYTES = MAX_CSV_FILE_SIZE_BYTES
     MAX_CONTENT_LENGTH = MAX_CONTENT_LENGTH
+    INACTIVE_ACCOUNT_DAYS = INACTIVE_ACCOUNT_DAYS
+    INACTIVE_ACCOUNT_DAYS = INACTIVE_ACCOUNT_DAYS
 
 
 
