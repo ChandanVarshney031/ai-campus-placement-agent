@@ -836,6 +836,72 @@ def _migration_017_learning_resource_progress(cursor: sqlite3.Cursor) -> None:
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_slrp_resource_id ON student_learning_resource_progress(resource_id)")
 
 
+def _migration_018_peer_accountability_groups(cursor: sqlite3.Cursor) -> None:
+    """Create peer accountability groups, memberships, shared goals, and progress tables."""
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS peer_accountability_groups (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            description TEXT,
+            creator_student_id TEXT NOT NULL,
+            invite_code TEXT UNIQUE NOT NULL,
+            is_private INTEGER DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_peer_groups_invite ON peer_accountability_groups (invite_code)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_peer_groups_creator ON peer_accountability_groups (creator_student_id)")
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS peer_group_members (
+            id TEXT PRIMARY KEY,
+            group_id TEXT NOT NULL,
+            student_id TEXT NOT NULL,
+            display_name TEXT NOT NULL,
+            role TEXT NOT NULL DEFAULT 'member',
+            share_progress INTEGER DEFAULT 1,
+            joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(group_id, student_id),
+            FOREIGN KEY (group_id) REFERENCES peer_accountability_groups(id) ON DELETE CASCADE
+        )
+    """)
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_peer_members_student ON peer_group_members (student_id)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_peer_members_group ON peer_group_members (group_id)")
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS peer_group_goals (
+            id TEXT PRIMARY KEY,
+            group_id TEXT NOT NULL,
+            title TEXT NOT NULL,
+            category TEXT NOT NULL DEFAULT 'general',
+            target_count INTEGER DEFAULT 1,
+            target_date TEXT,
+            description TEXT,
+            created_by_student_id TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (group_id) REFERENCES peer_accountability_groups(id) ON DELETE CASCADE
+        )
+    """)
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_peer_goals_group ON peer_group_goals (group_id)")
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS peer_group_member_progress (
+            id TEXT PRIMARY KEY,
+            goal_id TEXT NOT NULL,
+            student_id TEXT NOT NULL,
+            completed_count INTEGER DEFAULT 0,
+            is_completed INTEGER DEFAULT 0,
+            completed_at TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(goal_id, student_id),
+            FOREIGN KEY (goal_id) REFERENCES peer_group_goals(id) ON DELETE CASCADE
+        )
+    """)
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_peer_progress_goal_student ON peer_group_member_progress (goal_id, student_id)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_peer_progress_student ON peer_group_member_progress (student_id)")
+
+
 MIGRATIONS: List[Migration] = [
     Migration("001_core_schema", "Create analyses, interviews, users, job applications, cohort benchmarks", _migration_001_core_schema),
     Migration("002_user_auth_and_sessions", "Create auth_sessions, notification preferences, feedback, assessments", _migration_002_user_auth_and_sessions),
@@ -854,6 +920,7 @@ MIGRATIONS: List[Migration] = [
     Migration("015_account_lockouts", "Create account lockout tracking tables", _migration_015_account_lockouts),
     Migration("016_faculty_interventions", "Create faculty intervention tables", _migration_010_faculty_interventions),
     Migration("017_learning_resource_progress", "Create learning resource progress table", _migration_017_learning_resource_progress),
+    Migration("018_peer_accountability_groups", "Create peer accountability groups, members, goals, and progress tracking tables", _migration_018_peer_accountability_groups),
 ]
 
 
