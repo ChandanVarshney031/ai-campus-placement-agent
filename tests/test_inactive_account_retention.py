@@ -375,9 +375,15 @@ def test_deletion_uses_same_code_as_manual_deletion_and_purges_all_data(mock_ema
             assert cursor.fetchone()[0] == 0
             cursor.execute("SELECT COUNT(*) FROM job_applications WHERE student_id = ?", (user_id,))
             assert cursor.fetchone()[0] == 0
-            cursor.execute("SELECT COUNT(*) FROM coding_submissions WHERE student_id = ?", (user_id,))
+            cursor.execute(
+                "SELECT COUNT(*) FROM coding_submissions WHERE student_id = ?",
+                (user_id,),
+            )
             assert cursor.fetchone()[0] == 0
-            cursor.execute("SELECT COUNT(*) FROM inactive_account_warnings WHERE user_id = ?", (user_id,))
+            cursor.execute(
+                "SELECT COUNT(*) FROM inactive_account_warnings WHERE user_id = ?",
+                (user_id,),
+            )
             assert cursor.fetchone()[0] == 0
 
             # Verify admin audit log entry was created WITHOUT personal details
