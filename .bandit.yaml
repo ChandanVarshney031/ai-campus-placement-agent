@@ -1,0 +1,14 @@
+# Bandit configuration file for AI Campus Placement Agent
+# Used for static AST security analysis
+
+exclude_dirs:
+  - tests
+  - venv
+  - .venv
+  - .git
+  - instance
+  - data
+  - test-results
+
+# Skips / profiles if needed (can be extended)
+# By default, all standard tests are enabled.

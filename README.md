@@ -32,7 +32,7 @@ In contrast, the **AI Campus Placement Agent** implements a **Coordinated Multi-
 
 ## System Architecture & Workflow
 
-For a detailed architectural breakdown including sequence diagrams of resume analysis, the multi-agent execution pipeline, interview state machines, and relational database schemas, refer to the [System Architecture Guide](docs/architecture.md).
+For a detailed architectural breakdown including sequence diagrams of resume analysis, the multi-agent execution pipeline, interview state machines, and relational database schemas, refer to the [System Architecture Guide](docs/architecture.md). For details on secret detection and static AST vulnerability scans in CI, see the [Static Security Analysis Guide](docs/STATIC_SECURITY_ANALYSIS.md).
 
 ```mermaid
 graph TD

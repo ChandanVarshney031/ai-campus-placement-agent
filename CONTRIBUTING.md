@@ -82,7 +82,7 @@ Before submitting code changes or exploring new features, contributors are stron
 
 5. Visit `http://127.0.0.1:5000/` in your browser
 
-6. Verify local tests and lint checks (matching CI workflow):
+6. Verify local tests, security scans, and lint checks (matching CI workflow):
    ```bash
    # Run flake8 critical syntax and undefined name checks
    flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
@@ -90,10 +90,15 @@ Before submitting code changes or exploring new features, contributors are stron
    # Run automated pytest test suite
    pytest
 
+   # Run Bandit AST static security scan with baseline
+   bandit -r . -c .bandit.yaml -b .bandit-baseline.json -lll
+
    # Run pre-flight diagnostic validators
    python utils/ci_pipeline_validator.py
    python utils/deployment_check.py
    ```
+
+   For details on secret scanning (Gitleaks), static AST analysis (Bandit), and managing false positives or baselines, refer to the [Secret Scanning & Static Security Analysis Guide](docs/STATIC_SECURITY_ANALYSIS.md).
 
 ## Contributing Guidelines
 

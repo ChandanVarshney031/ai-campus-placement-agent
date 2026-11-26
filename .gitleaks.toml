@@ -1,0 +1,26 @@
+# Gitleaks configuration file for AI Campus Placement Agent
+# Defines detection rules, allowlists, and PR secret scanning settings
+
+[extend]
+# Inherit base default rules from official Gitleaks configuration
+useDefault = true
+
+[allowlist]
+description = "Global allowlist for harmless fixtures, test suites, and documentation examples"
+paths = [
+  '''^\.bandit-baseline\.json$''',
+  '''^tests/.*''',
+  '''^docs/.*''',
+  '''^README\.md$''',
+  '''^CONTRIBUTING\.md$''',
+  '''^\.env\.example$'''
+]
+
+stopwords = [
+  "dummy_key",
+  "fake_key",
+  "test_secret",
+  "sample_api_key",
+  "your_gemini_api_key_here",
+  "replace_with_a_long_random_secret"
+]
