@@ -120,6 +120,80 @@ logger = logging.getLogger(__name__)
 
 tracker_bp = Blueprint("tracker", __name__)
 
+
+def _current_streak_student_id():
+    return (
+        flask_session.get("user_id")
+        or flask_session.get("student_id")
+        or "default_student"
+    )
+
+
+@tracker_bp.route("/streak", methods=["GET"])
+def streak_tracker_view():
+    student_id = _current_streak_student_id()
+    year = request.args.get("year", type=int)
+    month = request.args.get("month", type=int)
+    streak = get_student_streak(student_id)
+    calendar = get_streak_calendar(student_id, year=year, month=month)
+    recent_activities = get_recent_preparation_activities(student_id, limit=15)
+    milestones = [
+        {"days": 3, "name": "3-Day Spark", "icon": "fa-bolt", "unlocked": streak["longest_streak"] >= 3},
+        {"days": 7, "name": "7-Day Flame", "icon": "fa-fire", "unlocked": streak["longest_streak"] >= 7},
+        {"days": 14, "name": "14-Day Torch", "icon": "fa-fire-flame-curved", "unlocked": streak["longest_streak"] >= 14},
+        {"days": 30, "name": "30-Day Firestorm", "icon": "fa-crown", "unlocked": streak["longest_streak"] >= 30},
+    ]
+    informative_message = (
+        "You haven't started your preparation streak yet! Complete a meaningful activity "
+        "— like analyzing your resume, practicing DSA problems, completing a company checklist item, "
+        "or taking a mock interview — to ignite your streak today."
+    ) if not streak.get("has_started") else None
+
+    return render_template(
+        "streak.html",
+        streak=streak,
+        calendar=calendar,
+        recent_activities=recent_activities,
+        student_id=student_id,
+        informative_message=informative_message,
+        milestones=milestones,
+    )
+
+
+@tracker_bp.route("/api/streak", methods=["GET"])
+def api_get_student_streak():
+    streak = get_student_streak(_current_streak_student_id())
+    return jsonify({
+        "success": True,
+        "streak": streak,
+        "message": "Streak retrieved successfully",
+    }), 200
+
+
+@tracker_bp.route("/api/streak/calendar", methods=["GET"])
+def api_get_streak_calendar():
+    calendar = get_streak_calendar(
+        _current_streak_student_id(),
+        year=request.args.get("year", type=int),
+        month=request.args.get("month", type=int),
+    )
+    return jsonify({"success": True, "calendar": calendar}), 200
+
+
+@tracker_bp.route("/api/preparation/streak", methods=["POST"])
+def api_calculate_preparation_streak():
+    """Calculates a preparation streak with the configured grace period."""
+    from utils.streak_grace_service import calculate_streak_with_grace
+
+    data = request.get_json(silent=True) or {}
+    streak = calculate_streak_with_grace(
+        data.get("activity_dates", []),
+        data.get("current_date"),
+        grace_days_allowed=int(data.get("grace_days", 1)),
+    )
+    return jsonify({"status": "success", "streak": streak}), 200
+
+
 @tracker_bp.route("/leaderboard", methods=["GET"])
 def leaderboard():
     """

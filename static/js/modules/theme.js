@@ -69,6 +69,8 @@ export function initThemeToggle() {
 
   const toggleBtns = document.querySelectorAll(".theme-toggle-btn");
   toggleBtns.forEach((btn) => {
+    if (btn.dataset.themeToggleInitialized === "true") return;
+    btn.dataset.themeToggleInitialized = "true";
     btn.addEventListener("click", (e) => {
       e.preventDefault();
       const activeTheme = document.documentElement.getAttribute("data-bs-theme") || "light";
