@@ -58,6 +58,13 @@ from utils.pagination import Pagination
 from utils.cohort_analytics import CohortAnalyticsService
 from utils.resume_info_extractor import *
 from utils.resume_pii_service import pii_service, REDACTION_TOKENS
+from utils.readiness_timeline_service import (
+    get_placement_activity_timeline,
+    get_readiness_effort_summary,
+    log_placement_activity,
+    ALL_CATEGORIES,
+    CATEGORY_META,
+)
 from utils.analysis_cache import *
 from utils.batch_analyzer import run_batch_company_comparison
 from agents.job_recommendation_agent import JobRecommendationAgent
@@ -2201,6 +2208,175 @@ def api_delete_offer_note(note_id):
     if deleted:
         return jsonify({"status": "success", "message": "Offer decision note removed"}), 200
     return jsonify({"status": "not_found", "message": "Offer note not found"}), 404
+
+
+# ==============================================================================
+# Placement Readiness Activity Timeline & Audit Trail (#timeline)
+# ==============================================================================
+
+@tracker_bp.route("/timeline", methods=["GET"])
+def placement_activity_timeline_view():
+    """
+    Candidate Placement Readiness Activity Timeline view (#timeline).
+    Presents an interactive chronological timeline across:
+    - Resume Revisions
+    - Practice Sessions
+    - Applications
+    - Interviews
+    - Feedback
+    - Achievements & Milestones
+    """
+    student_id = (
+        request.args.get("student_id")
+        or flask_session.get("user_id")
+        or flask_session.get("student_id")
+        or "default_student"
+    ).strip()
+
+    category_filter = request.args.get("category", "all").strip()
+    try:
+        limit = max(1, min(int(request.args.get("limit", 50)), 200))
+    except (ValueError, TypeError):
+        limit = 50
+
+    try:
+        offset = max(0, int(request.args.get("offset", 0)))
+    except (ValueError, TypeError):
+        offset = 0
+
+    start_date = request.args.get("start_date")
+    end_date = request.args.get("end_date")
+
+    timeline_data = get_placement_activity_timeline(
+        student_id=student_id,
+        category=category_filter,
+        limit=limit,
+        offset=offset,
+        start_date=start_date,
+        end_date=end_date,
+    )
+
+    is_api = (
+        request.is_json
+        or request.headers.get("X-Requested-With") == "XMLHttpRequest"
+        or "application/json" in request.headers.get("Accept", "")
+    )
+    if is_api:
+        return jsonify({"status": "success", "data": timeline_data}), 200
+
+    return render_template(
+        "timeline.html",
+        timeline_data=timeline_data,
+        student_id=student_id,
+        active_category=category_filter,
+    )
+
+
+@tracker_bp.route("/api/timeline", methods=["GET", "POST"])
+def api_placement_activity_timeline():
+    """
+    REST API endpoint for placement readiness activity timeline.
+    GET: Retrieve filtered chronological activity items and effort summary.
+    POST: Log a new custom activity or milestone event.
+    """
+    if request.method == "GET":
+        student_id = (
+            request.args.get("student_id")
+            or flask_session.get("user_id")
+            or flask_session.get("student_id")
+            or "default_student"
+        ).strip()
+
+        category = request.args.get("category", "all").strip()
+        try:
+            limit = max(1, min(int(request.args.get("limit", 50)), 200))
+        except (ValueError, TypeError):
+            limit = 50
+
+        try:
+            offset = max(0, int(request.args.get("offset", 0)))
+        except (ValueError, TypeError):
+            offset = 0
+
+        start_date = request.args.get("start_date")
+        end_date = request.args.get("end_date")
+
+        data = get_placement_activity_timeline(
+            student_id=student_id,
+            category=category,
+            limit=limit,
+            offset=offset,
+            start_date=start_date,
+            end_date=end_date,
+        )
+        return jsonify({"status": "success", "data": data}), 200
+
+    # POST: Log milestone or custom activity
+    payload = request.get_json(silent=True) or request.form or {}
+    student_id = (
+        payload.get("student_id")
+        or flask_session.get("user_id")
+        or flask_session.get("student_id")
+        or "default_student"
+    ).strip()
+
+    title = (payload.get("title") or "").strip()
+    if not title:
+        return jsonify({"status": "error", "message": "Activity title is required."}), 400
+
+    category = (payload.get("category") or "achievements").strip()
+    description = (payload.get("description") or "").strip()
+    event_date = payload.get("event_date")
+    is_milestone = payload.get("is_milestone")
+    if is_milestone is None:
+        is_milestone = 1 if category in ("achievements", "milestone", "milestones") else 0
+    else:
+        is_milestone = 1 if str(is_milestone).lower() in ("1", "true", "yes") else 0
+
+    metadata = payload.get("metadata")
+    if isinstance(metadata, str):
+        try:
+            metadata = json.loads(metadata)
+        except Exception:
+            metadata = {}
+    elif not isinstance(metadata, dict):
+        metadata = {}
+
+    try:
+        new_event = log_placement_activity(
+            student_id=student_id,
+            category=category,
+            title=title,
+            description=description,
+            event_date=event_date,
+            metadata=metadata,
+            is_milestone=is_milestone,
+        )
+        return jsonify({
+            "status": "success",
+            "message": "Placement activity logged successfully.",
+            "event": new_event,
+        }), 201
+    except ValueError as ve:
+        return jsonify({"status": "error", "message": str(ve)}), 400
+    except Exception as e:
+        logger.error(f"Failed to log placement activity for student {student_id}: {e}")
+        return jsonify({"status": "error", "message": "Failed to log activity."}), 500
+
+
+@tracker_bp.route("/api/timeline/summary", methods=["GET"])
+def api_placement_timeline_summary():
+    """Returns effort summary metrics across categories and readiness stages."""
+    student_id = (
+        request.args.get("student_id")
+        or flask_session.get("user_id")
+        or flask_session.get("student_id")
+        or "default_student"
+    ).strip()
+
+    summary = get_readiness_effort_summary(student_id=student_id)
+    return jsonify({"status": "success", "summary": summary}), 200
+
 
 
 

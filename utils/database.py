@@ -975,26 +975,22 @@ def init_db() -> None:
         """)
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_account_lockouts_until ON account_lockouts (locked_until)")
 
-        # Table: Shared preparation plans for mentor & faculty review (#prep-share)
+        # Table: Placement readiness activity timeline (#timeline)
         cursor.execute("""
-            CREATE TABLE IF NOT EXISTS shared_preparation_plans (
+            CREATE TABLE IF NOT EXISTS placement_activity_timeline (
                 id TEXT PRIMARY KEY,
-                token TEXT UNIQUE NOT NULL,
                 student_id TEXT NOT NULL,
-                plan_title TEXT NOT NULL DEFAULT 'Placement Preparation Plan',
-                mentor_name TEXT,
-                mentor_email TEXT,
-                selected_goal_ids_json TEXT NOT NULL DEFAULT '[]',
-                is_active INTEGER DEFAULT 1,
-                view_count INTEGER DEFAULT 0,
-                expires_at TIMESTAMP NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                revoked_at TIMESTAMP,
-                last_viewed_at TIMESTAMP
+                category TEXT NOT NULL,
+                title TEXT NOT NULL,
+                description TEXT,
+                event_date TEXT NOT NULL,
+                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                metadata_json TEXT DEFAULT '{}',
+                is_milestone INTEGER DEFAULT 0
             )
         """)
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_shared_prep_token ON shared_preparation_plans (token)")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_shared_prep_student ON shared_preparation_plans (student_id, is_active, created_at DESC)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_placement_timeline_student ON placement_activity_timeline (student_id, event_date DESC)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_placement_timeline_category ON placement_activity_timeline (student_id, category, event_date DESC)")
 
         cursor.execute("PRAGMA table_info(users)")
         user_cols = [c[1] for c in cursor.fetchall()]
@@ -5725,11 +5721,11 @@ def delete_user_account_and_personal_data(student_id: str) -> Dict[str, Any]:
         cursor.execute("DELETE FROM auth_sessions WHERE user_id = ?", (student_id,))
         deleted_counts["auth_sessions"] = cursor.rowcount
 
-        # 15c. Delete shared preparation plan links
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='shared_preparation_plans'")
+        # 15c. Delete placement activity timeline records
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='placement_activity_timeline'")
         if cursor.fetchone():
-            cursor.execute("DELETE FROM shared_preparation_plans WHERE student_id = ?", (student_id,))
-            deleted_counts["shared_preparation_plans"] = cursor.rowcount
+            cursor.execute("DELETE FROM placement_activity_timeline WHERE student_id = ?", (student_id,))
+            deleted_counts["placement_activity_timeline"] = cursor.rowcount
 
         # 16. Finally, delete the student account from users table
         cursor.execute("DELETE FROM users WHERE id = ?", (student_id,))

@@ -852,27 +852,23 @@ def _migration_017_learning_resource_progress(cursor: sqlite3.Cursor) -> None:
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_slrp_resource_id ON student_learning_resource_progress(resource_id)")
 
 
-def _migration_018_shared_preparation_plans(cursor: sqlite3.Cursor) -> None:
-    """Create shared_preparation_plans table for mentor and faculty read-only goal sharing."""
+def _migration_018_placement_activity_timeline(cursor: sqlite3.Cursor) -> None:
+    """Create placement activity timeline table for tracking readiness milestones and custom events."""
     cursor.execute("""
-        CREATE TABLE IF NOT EXISTS shared_preparation_plans (
+        CREATE TABLE IF NOT EXISTS placement_activity_timeline (
             id TEXT PRIMARY KEY,
-            token TEXT UNIQUE NOT NULL,
             student_id TEXT NOT NULL,
-            plan_title TEXT NOT NULL DEFAULT 'Placement Preparation Plan',
-            mentor_name TEXT,
-            mentor_email TEXT,
-            selected_goal_ids_json TEXT NOT NULL DEFAULT '[]',
-            is_active INTEGER DEFAULT 1,
-            view_count INTEGER DEFAULT 0,
-            expires_at TIMESTAMP NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            revoked_at TIMESTAMP,
-            last_viewed_at TIMESTAMP
+            category TEXT NOT NULL,
+            title TEXT NOT NULL,
+            description TEXT,
+            event_date TEXT NOT NULL,
+            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            metadata_json TEXT DEFAULT '{}',
+            is_milestone INTEGER DEFAULT 0
         )
     """)
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_shared_prep_token ON shared_preparation_plans (token)")
-    cursor.execute("CREATE INDEX IF NOT EXISTS idx_shared_prep_student ON shared_preparation_plans (student_id, is_active, created_at DESC)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_placement_timeline_student ON placement_activity_timeline (student_id, event_date DESC)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_placement_timeline_category ON placement_activity_timeline (student_id, category, event_date DESC)")
 
 
 MIGRATIONS: List[Migration] = [
@@ -893,7 +889,7 @@ MIGRATIONS: List[Migration] = [
     Migration("015_account_lockouts", "Create account lockout tracking tables", _migration_015_account_lockouts),
     Migration("016_faculty_interventions", "Create faculty intervention tables", _migration_010_faculty_interventions),
     Migration("017_learning_resource_progress", "Create learning resource progress table", _migration_017_learning_resource_progress),
-    Migration("018_shared_preparation_plans", "Create shared_preparation_plans table for mentor preparation plan sharing", _migration_018_shared_preparation_plans),
+    Migration("018_placement_activity_timeline", "Create placement_activity_timeline table for readiness activity tracking", _migration_018_placement_activity_timeline),
 ]
 
 
