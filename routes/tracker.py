@@ -2211,21 +2211,22 @@ def api_delete_offer_note(note_id):
 
 
 # ==============================================================================
-# Placement Readiness Activity Timeline & Audit Trail (#timeline)
+# Peer Goal Accountability Groups (#peer-groups)
 # ==============================================================================
 
-@tracker_bp.route("/timeline", methods=["GET"])
-def placement_activity_timeline_view():
+@tracker_bp.route("/peer-groups", methods=["GET"])
+@tracker_bp.route("/peer-groups/<group_id>", methods=["GET"])
+def peer_groups_view(group_id=None):
     """
-    Candidate Placement Readiness Activity Timeline view (#timeline).
-    Presents an interactive chronological timeline across:
-    - Resume Revisions
-    - Practice Sessions
-    - Applications
-    - Interviews
-    - Feedback
-    - Achievements & Milestones
+    Renders the peer goal accountability groups dashboard.
+    Enables students to create private study circles, invite peers,
+    track shared milestones, and toggle progress privacy.
     """
+    from utils.peer_accountability_service import (
+        list_student_groups,
+        get_group_details,
+    )
+
     student_id = (
         request.args.get("student_id")
         or flask_session.get("user_id")
@@ -2233,28 +2234,27 @@ def placement_activity_timeline_view():
         or "default_student"
     ).strip()
 
-    category_filter = request.args.get("category", "all").strip()
-    try:
-        limit = max(1, min(int(request.args.get("limit", 50)), 200))
-    except (ValueError, TypeError):
-        limit = 50
+    groups = list_student_groups(student_id)
 
-    try:
-        offset = max(0, int(request.args.get("offset", 0)))
-    except (ValueError, TypeError):
-        offset = 0
+    target_group_id = group_id or request.args.get("group_id")
+    active_group_data = None
+    group_error = None
 
-    start_date = request.args.get("start_date")
-    end_date = request.args.get("end_date")
-
-    timeline_data = get_placement_activity_timeline(
-        student_id=student_id,
-        category=category_filter,
-        limit=limit,
-        offset=offset,
-        start_date=start_date,
-        end_date=end_date,
-    )
+    if target_group_id:
+        try:
+            active_group_data = get_group_details(target_group_id, current_student_id=student_id)
+        except PermissionError as pe:
+            group_error = str(pe)
+        except KeyError:
+            group_error = "Accountability group not found."
+        except Exception as e:
+            group_error = f"Error loading group: {e}"
+    elif groups:
+        # Default to first group
+        try:
+            active_group_data = get_group_details(groups[0]["id"], current_student_id=student_id)
+        except Exception:
+            active_group_data = None
 
     is_api = (
         request.is_json
@@ -2262,23 +2262,30 @@ def placement_activity_timeline_view():
         or "application/json" in request.headers.get("Accept", "")
     )
     if is_api:
-        return jsonify({"status": "success", "data": timeline_data}), 200
+        return jsonify({
+            "status": "success",
+            "groups": groups,
+            "active_group": active_group_data,
+            "error": group_error,
+        }), 200
 
     return render_template(
-        "timeline.html",
-        timeline_data=timeline_data,
+        "peer_groups.html",
+        groups=groups,
+        active_group=active_group_data,
+        group_error=group_error,
         student_id=student_id,
-        active_category=category_filter,
     )
 
 
-@tracker_bp.route("/api/timeline", methods=["GET", "POST"])
-def api_placement_activity_timeline():
+@tracker_bp.route("/api/peer-groups", methods=["GET", "POST"])
+def api_peer_groups():
     """
-    REST API endpoint for placement readiness activity timeline.
-    GET: Retrieve filtered chronological activity items and effort summary.
-    POST: Log a new custom activity or milestone event.
+    GET: Lists all peer groups for the authenticated student.
+    POST: Creates a new private accountability circle with unique invite code.
     """
+    from utils.peer_accountability_service import list_student_groups, create_peer_group
+
     if request.method == "GET":
         student_id = (
             request.args.get("student_id")
@@ -2286,32 +2293,120 @@ def api_placement_activity_timeline():
             or flask_session.get("student_id")
             or "default_student"
         ).strip()
+        groups = list_student_groups(student_id)
+        return jsonify({"status": "success", "groups": groups}), 200
 
-        category = request.args.get("category", "all").strip()
-        try:
-            limit = max(1, min(int(request.args.get("limit", 50)), 200))
-        except (ValueError, TypeError):
-            limit = 50
+    payload = request.get_json(silent=True) or request.form or {}
+    student_id = (
+        payload.get("student_id")
+        or flask_session.get("user_id")
+        or flask_session.get("student_id")
+        or "default_student"
+    ).strip()
 
-        try:
-            offset = max(0, int(request.args.get("offset", 0)))
-        except (ValueError, TypeError):
-            offset = 0
+    name = (payload.get("name") or "").strip()
+    if not name:
+        return jsonify({"status": "error", "message": "Group name is required."}), 400
 
-        start_date = request.args.get("start_date")
-        end_date = request.args.get("end_date")
+    description = payload.get("description", "")
+    display_name = payload.get("display_name")
 
-        data = get_placement_activity_timeline(
-            student_id=student_id,
-            category=category,
-            limit=limit,
-            offset=offset,
-            start_date=start_date,
-            end_date=end_date,
+    try:
+        new_group = create_peer_group(
+            creator_student_id=student_id,
+            name=name,
+            description=description,
+            display_name=display_name,
         )
-        return jsonify({"status": "success", "data": data}), 200
+        return jsonify({
+            "status": "success",
+            "message": "Peer accountability group created.",
+            "group": new_group,
+        }), 201
+    except ValueError as ve:
+        return jsonify({"status": "error", "message": str(ve)}), 400
+    except Exception as e:
+        logger.error(f"Error creating peer group: {e}")
+        return jsonify({"status": "error", "message": "Failed to create group."}), 500
 
-    # POST: Log milestone or custom activity
+
+@tracker_bp.route("/api/peer-groups/join", methods=["POST"])
+def api_join_peer_group():
+    """
+    Joins a private peer accountability group via invite code.
+    """
+    from utils.peer_accountability_service import join_peer_group
+
+    payload = request.get_json(silent=True) or request.form or {}
+    student_id = (
+        payload.get("student_id")
+        or flask_session.get("user_id")
+        or flask_session.get("student_id")
+        or "default_student"
+    ).strip()
+
+    invite_code = (payload.get("invite_code") or "").strip()
+    if not invite_code:
+        return jsonify({"status": "error", "message": "Invite code is required."}), 400
+
+    display_name = payload.get("display_name")
+    share_progress = payload.get("share_progress", 1)
+    if isinstance(share_progress, str):
+        share_progress = 1 if share_progress.lower() in ("1", "true", "yes") else 0
+
+    try:
+        res = join_peer_group(
+            student_id=student_id,
+            invite_code=invite_code,
+            display_name=display_name,
+            share_progress=share_progress,
+        )
+        return jsonify({
+            "status": "success",
+            "message": "Enrolled in peer group successfully.",
+            "membership": res,
+        }), 200
+    except ValueError as ve:
+        return jsonify({"status": "error", "message": str(ve)}), 404
+    except Exception as e:
+        logger.error(f"Error joining peer group: {e}")
+        return jsonify({"status": "error", "message": "Failed to join group."}), 500
+
+
+@tracker_bp.route("/api/peer-groups/<group_id>", methods=["GET"])
+def api_get_peer_group(group_id):
+    """
+    Returns full details for a private peer accountability group,
+    with privacy enforcement masking opted-out members and shielding sensitive application data.
+    """
+    from utils.peer_accountability_service import get_group_details
+
+    student_id = (
+        request.args.get("student_id")
+        or flask_session.get("user_id")
+        or flask_session.get("student_id")
+        or "default_student"
+    ).strip()
+
+    try:
+        data = get_group_details(group_id=group_id, current_student_id=student_id)
+        return jsonify({"status": "success", "data": data}), 200
+    except PermissionError as pe:
+        return jsonify({"status": "error", "message": str(pe)}), 403
+    except KeyError as ke:
+        return jsonify({"status": "error", "message": str(ke)}), 404
+    except Exception as e:
+        logger.error(f"Error fetching peer group: {e}")
+        return jsonify({"status": "error", "message": "Failed to fetch group details."}), 500
+
+
+@tracker_bp.route("/api/peer-groups/<group_id>/goals", methods=["POST"])
+def api_create_peer_group_goal(group_id):
+    """
+    Creates a new shared goal/milestone in the peer accountability group.
+    """
+    from utils.peer_accountability_service import create_group_goal
+
     payload = request.get_json(silent=True) or request.form or {}
     student_id = (
         payload.get("student_id")
@@ -2322,61 +2417,143 @@ def api_placement_activity_timeline():
 
     title = (payload.get("title") or "").strip()
     if not title:
-        return jsonify({"status": "error", "message": "Activity title is required."}), 400
+        return jsonify({"status": "error", "message": "Goal title is required."}), 400
 
-    category = (payload.get("category") or "achievements").strip()
-    description = (payload.get("description") or "").strip()
-    event_date = payload.get("event_date")
-    is_milestone = payload.get("is_milestone")
-    if is_milestone is None:
-        is_milestone = 1 if category in ("achievements", "milestone", "milestones") else 0
-    else:
-        is_milestone = 1 if str(is_milestone).lower() in ("1", "true", "yes") else 0
-
-    metadata = payload.get("metadata")
-    if isinstance(metadata, str):
-        try:
-            metadata = json.loads(metadata)
-        except Exception:
-            metadata = {}
-    elif not isinstance(metadata, dict):
-        metadata = {}
+    category = payload.get("category", "general")
+    target_count = payload.get("target_count", 1)
+    target_date = payload.get("target_date")
+    description = payload.get("description")
 
     try:
-        new_event = log_placement_activity(
+        goal = create_group_goal(
             student_id=student_id,
-            category=category,
+            group_id=group_id,
             title=title,
+            category=category,
+            target_count=target_count,
+            target_date=target_date,
             description=description,
-            event_date=event_date,
-            metadata=metadata,
-            is_milestone=is_milestone,
         )
         return jsonify({
             "status": "success",
-            "message": "Placement activity logged successfully.",
-            "event": new_event,
+            "message": "Shared goal created.",
+            "goal": goal,
         }), 201
+    except PermissionError as pe:
+        return jsonify({"status": "error", "message": str(pe)}), 403
     except ValueError as ve:
         return jsonify({"status": "error", "message": str(ve)}), 400
     except Exception as e:
-        logger.error(f"Failed to log placement activity for student {student_id}: {e}")
-        return jsonify({"status": "error", "message": "Failed to log activity."}), 500
+        logger.error(f"Error creating peer goal: {e}")
+        return jsonify({"status": "error", "message": "Failed to create goal."}), 500
 
 
-@tracker_bp.route("/api/timeline/summary", methods=["GET"])
-def api_placement_timeline_summary():
-    """Returns effort summary metrics across categories and readiness stages."""
+@tracker_bp.route("/api/peer-groups/goals/<goal_id>/progress", methods=["POST"])
+def api_update_peer_goal_progress(goal_id):
+    """
+    Updates completion progress or marks a group task as complete.
+    """
+    from utils.peer_accountability_service import update_goal_progress
+
+    payload = request.get_json(silent=True) or request.form or {}
     student_id = (
-        request.args.get("student_id")
+        payload.get("student_id")
         or flask_session.get("user_id")
         or flask_session.get("student_id")
         or "default_student"
     ).strip()
 
-    summary = get_readiness_effort_summary(student_id=student_id)
-    return jsonify({"status": "success", "summary": summary}), 200
+    completed_count = payload.get("completed_count")
+    is_completed = payload.get("is_completed")
+    if is_completed is not None and isinstance(is_completed, str):
+        is_completed = is_completed.lower() in ("1", "true", "yes")
 
+    try:
+        prog = update_goal_progress(
+            student_id=student_id,
+            goal_id=goal_id,
+            completed_count=completed_count,
+            is_completed=is_completed,
+        )
+        return jsonify({
+            "status": "success",
+            "message": "Progress recorded.",
+            "progress": prog,
+        }), 200
+    except PermissionError as pe:
+        return jsonify({"status": "error", "message": str(pe)}), 403
+    except ValueError as ve:
+        return jsonify({"status": "error", "message": str(ve)}), 400
+    except Exception as e:
+        logger.error(f"Error updating goal progress: {e}")
+        return jsonify({"status": "error", "message": "Failed to record progress."}), 500
+
+
+@tracker_bp.route("/api/peer-groups/<group_id>/privacy", methods=["POST"])
+def api_update_peer_group_privacy(group_id):
+    """
+    Allows a student member to opt in or opt out of public progress sharing with group peers.
+    """
+    from utils.peer_accountability_service import update_member_privacy
+
+    payload = request.get_json(silent=True) or request.form or {}
+    student_id = (
+        payload.get("student_id")
+        or flask_session.get("user_id")
+        or flask_session.get("student_id")
+        or "default_student"
+    ).strip()
+
+    share_progress = payload.get("share_progress")
+    if share_progress is not None:
+        share_progress = 1 if str(share_progress).lower() in ("1", "true", "yes") else 0
+    else:
+        share_progress = 1
+
+    display_name = payload.get("display_name")
+
+    try:
+        updated = update_member_privacy(
+            student_id=student_id,
+            group_id=group_id,
+            share_progress=share_progress,
+            display_name=display_name,
+        )
+        return jsonify({
+            "status": "success",
+            "message": "Privacy settings updated.",
+            "settings": updated,
+        }), 200
+    except PermissionError as pe:
+        return jsonify({"status": "error", "message": str(pe)}), 403
+    except Exception as e:
+        logger.error(f"Error updating peer privacy: {e}")
+        return jsonify({"status": "error", "message": "Failed to update privacy settings."}), 500
+
+
+@tracker_bp.route("/api/peer-groups/<group_id>/leave", methods=["POST"])
+def api_leave_peer_group(group_id):
+    """
+    Leaves a peer accountability group and purges member progress.
+    """
+    from utils.peer_accountability_service import leave_peer_group
+
+    payload = request.get_json(silent=True) or request.form or {}
+    student_id = (
+        payload.get("student_id")
+        or flask_session.get("user_id")
+        or flask_session.get("student_id")
+        or "default_student"
+    ).strip()
+
+    try:
+        success = leave_peer_group(student_id=student_id, group_id=group_id)
+        if success:
+            return jsonify({"status": "success", "message": "Left accountability group."}), 200
+        return jsonify({"status": "error", "message": "Member not found in group."}), 404
+    except Exception as e:
+        logger.error(f"Error leaving peer group: {e}")
+        return jsonify({"status": "error", "message": "Failed to leave group."}), 500
 
 
 
