@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>Career Preferences & Recommendations - AI Campus Placement Agent</title>
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
+  <!-- FontAwesome Icons -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"
+    integrity="sha384-iw3OoTErCYJJB9mCa8LNS2hbsQ7M3C0EpIsO/H5+EGAkPGc6rk+V8i04oW/K5xq0" crossorigin="anonymous">
+  <!-- Custom CSS -->
+  <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+</head>
+
+<body class="bg-light">
+  <!-- Navigation -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom py-2 py-md-3">
+    <div class="container d-flex flex-wrap align-items-center justify-content-between gap-2">
+      <a class="navbar-brand navbar-brand-custom fs-5 fs-md-4 text-truncate" href="/">
+        <i class="fa-solid fa-graduation-cap"></i> AI Campus <span class="d-inline">Placement Agent</span>
+      </a>
+      <div class="d-flex align-items-center flex-wrap gap-2 ms-auto ms-lg-0">
+        <a href="/" class="btn btn-outline-secondary btn-sm rounded-pill px-3 py-1">
+          <i class="fa-solid fa-house me-1"></i> Home
+        </a>
+        <a href="/profile" class="btn btn-outline-primary btn-sm rounded-pill px-3 py-1">
+          <i class="fa-solid fa-user me-1"></i> Profile
+        </a>
+        <a href="/jobs/recommendations" class="btn btn-outline-success btn-sm rounded-pill px-3 py-1">
+          <i class="fa-solid fa-briefcase me-1"></i> Campus Drives
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container py-4">
+    <!-- Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom gap-2">
+      <div>
+        <h2 class="h3 fw-bold text-primary mb-1">
+          <i class="fa-solid fa-compass me-2"></i>Career Preferences & Tailored Recommendations
+        </h2>
+        <p class="text-muted small mb-0">
+          Specify your dream roles, target companies, locations, and compensation goals to receive tailored placement recommendations.
+        </p>
+      </div>
+      <div>
+        <a href="#recommendationsSection" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+          <i class="fa-solid fa-arrow-down me-1"></i> Jump to Recommendations
+        </a>
+      </div>
+    </div>
+
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <div class="row g-4 mb-5">
+      <!-- Preferences Management Form -->
+      <div class="col-lg-5">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+          <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+            <h5 class="card-title fw-bold mb-0 text-dark">
+              <i class="fa-solid fa-sliders text-primary me-2"></i>Manage Career Preferences
+            </h5>
+            {% if preferences.is_configured %}
+              <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill small">
+                <i class="fa-solid fa-check me-1"></i>Configured
+              </span>
+            {% else %}
+              <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill small">
+                Default Defaults
+              </span>
+            {% endif %}
+          </div>
+          <div class="card-body p-4">
+            <form action="/career-preferences" method="POST" id="careerPreferencesForm">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+              <!-- Target Roles -->
+              <div class="mb-3">
+                <label class="form-label fw-semibold small text-dark mb-1">
+                  <i class="fa-solid fa-laptop-code text-primary me-1"></i> Target Job Roles *
+                </label>
+                <div class="d-flex flex-wrap gap-1 mb-2" id="rolesCheckboxes">
+                  {% for r in options.roles %}
+                    <div class="form-check form-check-inline m-0 me-1 mb-1">
+                      <input class="btn-check" type="checkbox" name="target_roles" id="role_{{ loop.index }}" value="{{ r }}"
+                        {{ 'checked' if r in preferences.target_roles else '' }}>
+                      <label class="btn btn-xs btn-outline-secondary rounded-pill py-0.5 px-2.5 small" for="role_{{ loop.index }}" style="font-size: 0.78rem;">
+                        {{ r }}
+                      </label>
+                    </div>
+                  {% endfor %}
+                </div>
+                <input type="text" name="custom_target_roles" class="form-control form-control-sm rounded-pill"
+                  placeholder="Other role (e.g. SRE, Security Engineer)">
+              </div>
+
+              <!-- Target / Dream Companies -->
+              <div class="mb-3">
+                <label class="form-label fw-semibold small text-dark mb-1">
+                  <i class="fa-solid fa-building text-success me-1"></i> Target & Dream Companies
+                </label>
+                <div class="d-flex flex-wrap gap-1 mb-2" id="companiesCheckboxes">
+                  {% for c in options.companies %}
+                    <div class="form-check form-check-inline m-0 me-1 mb-1">
+                      <input class="btn-check" type="checkbox" name="target_companies" id="comp_{{ loop.index }}" value="{{ c }}"
+                        {{ 'checked' if c in preferences.target_companies else '' }}>
+                      <label class="btn btn-xs btn-outline-secondary rounded-pill py-0.5 px-2.5 small" for="comp_{{ loop.index }}" style="font-size: 0.78rem;">
+                        {{ c }}
+                      </label>
+                    </div>
+                  {% endfor %}
+                </div>
+                <input type="text" name="custom_target_companies" class="form-control form-control-sm rounded-pill"
+                  placeholder="Other dream company (e.g. Atlassian, Flipkart)">
+              </div>
+
+              <!-- Preferred Locations & Work Mode -->
+              <div class="row g-2 mb-3">
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold small text-dark mb-1">
+                    <i class="fa-solid fa-location-dot text-danger me-1"></i> Preferred Locations
+                  </label>
+                  <select class="form-select form-select-sm" name="preferred_locations" multiple size="3" style="font-size: 0.8rem;">
+                    {% for loc in options.locations %}
+                      <option value="{{ loc }}" {{ 'selected' if loc in preferences.preferred_locations or ('Any Location' in preferences.preferred_locations and loc == 'Any Location') else '' }}>
+                        {{ loc }}
+                      </option>
+                    {% endfor %}
+                  </select>
+                  <span class="text-muted small" style="font-size: 0.7rem;">Hold Ctrl/Cmd to select multiple</span>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold small text-dark mb-1">
+                    <i class="fa-solid fa-house-laptop text-info me-1"></i> Work Mode
+                  </label>
+                  <div class="d-flex flex-column gap-1">
+                    {% for wm in options.work_modes %}
+                      <div class="form-check small mb-0">
+                        <input class="form-check-input" type="checkbox" name="preferred_work_modes" id="wm_{{ loop.index }}" value="{{ wm }}"
+                          {{ 'checked' if wm in preferences.preferred_work_modes else '' }}>
+                        <label class="form-check-label" for="wm_{{ loop.index }}">{{ wm }}</label>
+                      </div>
+                    {% endfor %}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Role Type & Expected Salary -->
+              <div class="row g-2 mb-3">
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold small text-dark mb-1">
+                    <i class="fa-solid fa-id-badge text-warning me-1"></i> Role Type
+                  </label>
+                  <div class="d-flex flex-wrap gap-2">
+                    {% for rt in options.role_types %}
+                      <div class="form-check small">
+                        <input class="form-check-input" type="checkbox" name="preferred_role_types" id="rt_{{ loop.index }}" value="{{ rt }}"
+                          {{ 'checked' if rt in preferences.preferred_role_types else '' }}>
+                        <label class="form-check-label" for="rt_{{ loop.index }}">{{ rt }}</label>
+                      </div>
+                    {% endfor %}
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold small text-dark mb-1">
+                    <i class="fa-solid fa-money-bill-wave text-success me-1"></i> Min. Expected CTC (LPA)
+                  </label>
+                  <div class="input-group input-group-sm">
+                    <span class="input-group-text">₹</span>
+                    <input type="number" step="0.5" min="0" max="100" class="form-control" name="expected_salary_min"
+                      value="{{ preferences.expected_salary_min|default(8.0) }}" placeholder="e.g. 12">
+                    <span class="input-group-text">LPA</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Primary Technical Skills -->
+              <div class="mb-3">
+                <label class="form-label fw-semibold small text-dark mb-1">
+                  <i class="fa-solid fa-code text-primary me-1"></i> Primary Technical Skills (Comma-separated)
+                </label>
+                <input type="text" name="primary_skills" class="form-control form-control-sm"
+                  value="{{ preferences.primary_skills|join(', ') }}" placeholder="Python, SQL, React, Docker">
+              </div>
+
+              <div class="d-grid mt-4">
+                <button type="submit" class="btn btn-primary rounded-pill py-2 fw-semibold" id="btnSavePreferences">
+                  <i class="fa-solid fa-floppy-disk me-1"></i> Save Preferences & Refresh Recommendations
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Summary & Overview Card -->
+      <div class="col-lg-7">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+          <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+            <h5 class="card-title fw-bold mb-0 text-dark">
+              <i class="fa-solid fa-chart-pie text-success me-2"></i>Preferences Overview
+            </h5>
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill">
+              {{ recommendations.total_jobs_matched }} Matching Opportunities
+            </span>
+          </div>
+          <div class="card-body p-4">
+            <div class="alert alert-primary bg-primary-subtle border-0 rounded-3 mb-4 p-3 small text-primary-emphasis">
+              <i class="fa-solid fa-bullhorn me-1"></i>
+              <strong>Status:</strong> {{ recommendations.summary }}
+            </div>
+
+            <div class="row g-3 mb-4">
+              <div class="col-sm-6">
+                <div class="p-3 bg-light rounded-3 border h-100">
+                  <span class="text-secondary small fw-bold text-uppercase d-block mb-1">Selected Target Roles</span>
+                  {% if preferences.target_roles %}
+                    <div class="d-flex flex-wrap gap-1">
+                      {% for r in preferences.target_roles %}
+                        <span class="badge bg-primary text-white rounded-pill px-2 py-1 small">{{ r }}</span>
+                      {% endfor %}
+                    </div>
+                  {% else %}
+                    <span class="text-muted small fst-italic">No target roles selected.</span>
+                  {% endif %}
+                </div>
+              </div>
+              <div class="col-sm-6">
+                <div class="p-3 bg-light rounded-3 border h-100">
+                  <span class="text-secondary small fw-bold text-uppercase d-block mb-1">Target Companies</span>
+                  {% if preferences.target_companies %}
+                    <div class="d-flex flex-wrap gap-1">
+                      {% for c in preferences.target_companies %}
+                        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1 small">{{ c }}</span>
+                      {% endfor %}
+                    </div>
+                  {% else %}
+                    <span class="text-muted small fst-italic">No target companies specified.</span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+
+            <div class="row g-3 mb-4">
+              <div class="col-sm-4">
+                <div class="p-3 bg-light rounded-3 border text-center">
+                  <span class="text-muted small d-block mb-1">Min. Expected CTC</span>
+                  <strong class="text-dark fs-5">₹{{ preferences.expected_salary_min }} LPA</strong>
+                </div>
+              </div>
+              <div class="col-sm-4">
+                <div class="p-3 bg-light rounded-3 border text-center">
+                  <span class="text-muted small d-block mb-1">Work Mode</span>
+                  <strong class="text-dark small d-block">{{ preferences.preferred_work_modes|join(', ') if preferences.preferred_work_modes else 'Any' }}</strong>
+                </div>
+              </div>
+              <div class="col-sm-4">
+                <div class="p-3 bg-light rounded-3 border text-center">
+                  <span class="text-muted small d-block mb-1">Locations</span>
+                  <strong class="text-dark small d-block">{{ preferences.preferred_locations|join(', ') if preferences.preferred_locations else 'Any' }}</strong>
+                </div>
+              </div>
+            </div>
+
+            <!-- Top Skills to Acquire based on Preferences -->
+            <div class="p-3 bg-light rounded-3 border">
+              <h6 class="small fw-bold text-dark mb-2">
+                <i class="fa-solid fa-lightbulb text-warning me-1"></i> High-Yield Skills for Your Preferred Roles:
+              </h6>
+              <div class="d-flex flex-wrap gap-2">
+                {% for item in recommendations.top_focus_skills %}
+                  <span class="badge {{ 'bg-success-subtle text-success border border-success-subtle' if item.already_acquired else 'bg-warning-subtle text-warning-emphasis border border-warning-subtle' }} rounded-pill px-2.5 py-1.5 small">
+                    <i class="fa-solid {{ 'fa-check' if item.already_acquired else 'fa-plus' }} me-1"></i>
+                    {{ item.skill }}
+                    <span class="opacity-75 ms-1">({{ item.frequency_in_preferred_jobs }} drives)</span>
+                  </span>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recommendations Section -->
+    <div class="mb-5" id="recommendationsSection">
+      <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-header bg-white py-3 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
+          <div>
+            <span class="text-primary fw-semibold text-uppercase small">Intelligent Recommendation Engine</span>
+            <h4 class="fw-bold mb-0">
+              <i class="fa-solid fa-wand-magic-sparkles text-primary me-2"></i>Recommendations Based on Your Selections
+            </h4>
+          </div>
+          <!-- Tabs Navigation -->
+          <ul class="nav nav-pills" id="recomTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active rounded-pill px-3 py-1.5 small" id="jobs-tab" data-bs-toggle="pill"
+                data-bs-target="#jobsPane" type="button" role="tab" aria-controls="jobsPane" aria-selected="true">
+                <i class="fa-solid fa-briefcase me-1"></i> Matching Jobs ({{ recommendations.recommended_jobs|length }})
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link rounded-pill px-3 py-1.5 small ms-1" id="tracks-tab" data-bs-toggle="pill"
+                data-bs-target="#tracksPane" type="button" role="tab" aria-controls="tracksPane" aria-selected="false">
+                <i class="fa-solid fa-graduation-cap me-1"></i> Preparation Tracks ({{ recommendations.recommended_role_tracks|length }})
+              </button>
+            </li>
+          </ul>
+        </div>
+        <div class="card-body p-4">
+          <div class="tab-content" id="recomTabContent">
+            <!-- Tab 1: Recommended Jobs -->
+            <div class="tab-pane fade show active" id="jobsPane" role="tabpanel" aria-labelledby="jobs-tab">
+              {% if recommendations.recommended_jobs %}
+                <div class="row g-4">
+                  {% for job in recommendations.recommended_jobs %}
+                    <div class="col-md-6 col-lg-4">
+                      <div class="card border rounded-4 shadow-xs h-100 p-3 d-flex flex-column justify-content-between">
+                        <div>
+                          <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="badge bg-{{ job.tier_badge }} rounded-pill px-2.5 py-1 small">
+                              {{ job.tier_label }} ({{ job.preference_match_score }}%)
+                            </span>
+                            <span class="badge bg-light text-muted border rounded-pill small">
+                              {{ job.role_type }}
+                            </span>
+                          </div>
+                          <h6 class="fw-bold text-dark mb-1 text-truncate" title="{{ job.title }}">{{ job.title }}</h6>
+                          <div class="text-muted small mb-2">
+                            <i class="fa-solid fa-building me-1 text-secondary"></i><strong>{{ job.company }}</strong>
+                            &bull; <span>{{ job.location }}</span>
+                          </div>
+                          <div class="alert alert-light border py-1.5 px-2 rounded-3 small mb-3 text-secondary" style="font-size: 0.76rem;">
+                            <i class="fa-solid fa-circle-check text-success me-1"></i> {{ job.fit_reason }}
+                          </div>
+                          <div class="mb-2">
+                            <span class="fw-semibold text-dark small" style="font-size: 0.75rem;">Compensation:</span>
+                            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill small ms-1">
+                              {{ job.salary_range }}
+                            </span>
+                          </div>
+                          <!-- Matched skills -->
+                          <div class="mb-3">
+                            <span class="text-muted small d-block mb-1" style="font-size: 0.72rem;">Required Skills:</span>
+                            <div class="d-flex flex-wrap gap-1">
+                              {% for s in job.required_skills[:4] %}
+                                <span class="badge {{ 'bg-success-subtle text-success' if s in job.matched_skills else 'bg-light text-muted border' }} rounded-pill small" style="font-size: 0.7rem;">
+                                  {{ s }}
+                                </span>
+                              {% endfor %}
+                            </div>
+                          </div>
+                        </div>
+                        <div class="pt-2 border-top d-flex justify-content-between align-items-center">
+                          <span class="text-muted small" style="font-size: 0.72rem;">{{ job.work_mode }}</span>
+                          <a href="{{ job.apply_url }}" target="_blank" rel="noopener noreferrer"
+                            class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1" style="font-size: 0.78rem;">
+                            Apply Drive <i class="fa-solid fa-arrow-up-right-from-square ms-1"></i>
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  {% endfor %}
+                </div>
+              {% else %}
+                <div class="text-center py-5">
+                  <i class="fa-solid fa-briefcase text-muted fa-3x mb-3"></i>
+                  <h5>No Openings Matching Exactly Yet</h5>
+                  <p class="text-muted small">Try broadening your target roles or locations to see more opportunities.</p>
+                </div>
+              {% endif %}
+            </div>
+
+            <!-- Tab 2: Role Preparation Tracks -->
+            <div class="tab-pane fade" id="tracksPane" role="tabpanel" aria-labelledby="tracks-tab">
+              <div class="row g-4">
+                {% for track in recommendations.recommended_role_tracks %}
+                  <div class="col-md-6">
+                    <div class="card border rounded-4 shadow-xs h-100 p-4">
+                      <div class="d-flex align-items-center mb-3">
+                        <div class="d-inline-flex align-items-center justify-content-center bg-primary-subtle text-primary rounded-circle me-3" style="width: 48px; height: 48px;">
+                          <i class="{{ track.icon }} fa-lg"></i>
+                        </div>
+                        <div>
+                          <span class="badge bg-secondary-subtle text-secondary small rounded-pill">{{ track.category }}</span>
+                          <h5 class="fw-bold text-dark mb-0 mt-1">{{ track.role_name }}</h5>
+                        </div>
+                      </div>
+                      <p class="text-secondary small mb-3">{{ track.tagline }}</p>
+
+                      <h6 class="small fw-bold text-dark mb-2">Core Technologies to Master:</h6>
+                      <div class="d-flex flex-wrap gap-1 mb-3">
+                        {% for tech in track.core_technologies %}
+                          <span class="badge bg-light text-dark border rounded-pill px-2.5 py-1 small">
+                            {{ tech.name if tech.name is defined else tech }}
+                          </span>
+                        {% endfor %}
+                      </div>
+
+                      <h6 class="small fw-bold text-dark mb-2">Key Architectural Concepts:</h6>
+                      <ul class="list-unstyled small text-muted mb-3">
+                        {% for c in track.important_concepts %}
+                          <li class="mb-1"><i class="fa-solid fa-angle-right text-primary me-1"></i>{{ c.concept if c.concept is defined else c }}</li>
+                        {% endfor %}
+                      </ul>
+
+                      <div class="mt-auto pt-3 border-top text-end">
+                        <a href="/role-prep" class="btn btn-sm btn-primary rounded-pill px-3">
+                          Start Preparation Roadmap <i class="fa-solid fa-arrow-right ms-1"></i>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
+</body>
+
+</html>

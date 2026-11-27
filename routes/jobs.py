@@ -258,6 +258,151 @@ def download_company_cheat_sheet(company_name: str):
         return redirect(url_for("companies_search_view"))
 
 
+# ==============================================================================
+# Career Preferences & Recommendations Routes (#task-career-preferences)
+# ==============================================================================
+
+@jobs_bp.route("/career-preferences", methods=["GET", "POST"])
+def career_preferences_view():
+    """
+    Candidate Career Preferences management view & recommendations hub.
+    Allows students to set their target roles, dream companies, locations, work modes,
+    and salary expectations, returning tailored placement recommendations.
+    """
+    from utils.career_preferences_service import (
+        get_career_preferences,
+        save_career_preferences,
+        get_available_preference_options,
+        get_career_recommendations,
+    )
+
+    student_id = flask_session.get("user_id") or flask_session.get("student_id") or "default_student"
+
+    if request.method == "POST":
+        target_roles = request.form.getlist("target_roles")
+        custom_roles = (request.form.get("custom_target_roles") or "").strip()
+        if custom_roles:
+            target_roles.extend([r.strip() for r in custom_roles.split(",") if r.strip()])
+
+        target_companies = request.form.getlist("target_companies")
+        custom_companies = (request.form.get("custom_target_companies") or "").strip()
+        if custom_companies:
+            target_companies.extend([c.strip() for c in custom_companies.split(",") if c.strip()])
+
+        preferred_locations = request.form.getlist("preferred_locations")
+        preferred_work_modes = request.form.getlist("preferred_work_modes")
+        preferred_role_types = request.form.getlist("preferred_role_types")
+        primary_skills = [s.strip() for s in (request.form.get("primary_skills") or "").split(",") if s.strip()]
+        expected_salary_min = float(request.form.get("expected_salary_min") or 0.0)
+
+        payload = {
+            "target_roles": target_roles,
+            "target_companies": target_companies,
+            "preferred_locations": preferred_locations,
+            "preferred_work_modes": preferred_work_modes,
+            "preferred_role_types": preferred_role_types,
+            "primary_skills": primary_skills,
+            "expected_salary_min": expected_salary_min,
+            "notes": (request.form.get("notes") or "").strip()
+        }
+
+        try:
+            save_career_preferences(student_id=student_id, payload=payload)
+            flash("Career preferences updated successfully! Recommendations have been refreshed.", "success")
+        except Exception as e:
+            logger.error(f"Error saving career preferences: {e}")
+            flash(f"Error updating career preferences: {e}", "error")
+
+        return redirect(url_for("jobs.career_preferences_view"))
+
+    prefs = get_career_preferences(student_id)
+    options = get_available_preference_options()
+    recommendations = get_career_recommendations(student_id, preferences=prefs)
+
+    return render_template(
+        "career_preferences.html",
+        preferences=prefs,
+        options=options,
+        recommendations=recommendations,
+        student_id=student_id
+    )
+
+
+@jobs_bp.route("/api/career-preferences", methods=["GET", "POST", "PUT"])
+def api_career_preferences():
+    """
+    REST API for reading and updating candidate career preferences.
+    GET: Returns current preferences and available taxonomy options.
+    POST/PUT: Saves preferences and returns updated preferences + recommendations.
+    """
+    from utils.career_preferences_service import (
+        get_career_preferences,
+        save_career_preferences,
+        get_available_preference_options,
+        get_career_recommendations,
+    )
+
+    student_id = (
+        request.args.get("student_id")
+        or flask_session.get("user_id")
+        or flask_session.get("student_id")
+        or "default_student"
+    )
+
+    if request.method == "GET":
+        prefs = get_career_preferences(student_id)
+        options = get_available_preference_options()
+        return jsonify({
+            "status": "success",
+            "preferences": prefs,
+            "options": options
+        }), 200
+
+    payload = request.get_json(silent=True) or request.form.to_dict() or {}
+    try:
+        updated = save_career_preferences(student_id=student_id, payload=payload)
+        recs = get_career_recommendations(student_id, preferences=updated)
+        return jsonify({
+            "status": "success",
+            "message": "Career preferences saved successfully.",
+            "preferences": updated,
+            "recommendations": recs
+        }), 200
+    except ValueError as ve:
+        return jsonify({"status": "error", "message": str(ve)}), 400
+    except Exception as exc:
+        logger.error(f"Error updating career preferences: {exc}")
+        return jsonify({"status": "error", "message": str(exc)}), 500
+
+
+@jobs_bp.route("/api/career-preferences/recommendations", methods=["GET", "POST"])
+def api_career_recommendations():
+    """
+    REST API returning tailored placement and job recommendations based on candidate career selections.
+    """
+    from utils.career_preferences_service import (
+        get_career_preferences,
+        get_career_recommendations,
+    )
+
+    student_id = (
+        request.args.get("student_id")
+        or flask_session.get("user_id")
+        or flask_session.get("student_id")
+        or "default_student"
+    )
+
+    payload = request.get_json(silent=True) if request.method == "POST" else None
+    limit = int(request.args.get("limit", 12))
+
+    try:
+        recs = get_career_recommendations(student_id=student_id, preferences=payload, limit=limit)
+        return jsonify(recs), 200
+    except Exception as exc:
+        logger.error(f"Error computing career recommendations: {exc}")
+        return jsonify({"status": "error", "message": str(exc)}), 500
+
+
 @jobs_bp.route("/api/jobs/recommendations/<analysis_id>", methods=["GET"])
 def api_job_recommendations(analysis_id: str):
     """

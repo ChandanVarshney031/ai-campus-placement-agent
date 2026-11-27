@@ -62,6 +62,7 @@ from utils.batch_analyzer import run_batch_company_comparison
 from agents.job_recommendation_agent import JobRecommendationAgent
 from utils.demo_mode import *
 from utils.role_skill_gap_service import *
+from utils.weak_topics_service import get_student_weak_topics, update_weak_topic_status
 from utils.ats_score_service import evaluate_resume_ats_score
 from utils.format_checker import *
 from utils.pdf_reader import *
@@ -149,6 +150,101 @@ from .common import *
 logger = logging.getLogger(__name__)
 
 analysis_bp = Blueprint("analysis", __name__)
+
+
+def _require_authenticated_weak_topic_student():
+    student_id = flask_session.get("user_id") or (flask_session.get("user") or {}).get("id")
+    if student_id:
+        return student_id, None
+    if request.is_json or request.path.startswith("/api/"):
+        return None, (jsonify({"success": False, "error": "Authentication required."}), 401)
+    flash("Please log in to view your weak topics notebook.", "warning")
+    return None, redirect(url_for("login", next=request.path))
+
+
+@analysis_bp.route("/weak-topics", methods=["GET"])
+def weak_topics_view():
+    student_id, auth_response = _require_authenticated_weak_topic_student()
+    if auth_response:
+        return auth_response
+
+    show_resolved = request.args.get("show_resolved", "").strip().lower() in ("1", "true", "yes")
+    data = get_student_weak_topics(student_id=student_id, include_resolved=show_resolved)
+
+    return render_template(
+        "weak_topics.html",
+        student_id=student_id,
+        weak_topics=data["topics"],
+        summary=data["summary"],
+        show_resolved=show_resolved,
+    )
+
+
+@analysis_bp.route("/weak-topics/<topic_key>/status", methods=["POST"])
+def update_weak_topic_status_view(topic_key: str):
+    student_id, auth_response = _require_authenticated_weak_topic_student()
+    if auth_response:
+        return auth_response
+
+    status = request.form.get("status", "active").strip().lower()
+    notes = request.form.get("notes", "").strip()
+    show_resolved = request.form.get("show_resolved", request.args.get("show_resolved", ""))
+    success, error = update_weak_topic_status(
+        student_id=student_id,
+        topic_key=topic_key,
+        status=status,
+        notes=notes,
+    )
+    if not success:
+        flash(error or "Failed to update topic status.", "danger")
+    else:
+        status_label = "resolved and hidden" if status == "resolved" else status
+        flash(f"Topic status updated to '{status_label}'.", "success")
+
+    redirect_kwargs = {"show_resolved": show_resolved} if show_resolved else {}
+    return redirect(url_for("weak_topics_view", **redirect_kwargs))
+
+
+@analysis_bp.route("/api/weak-topics", methods=["GET"])
+def api_get_weak_topics():
+    student_id, auth_response = _require_authenticated_weak_topic_student()
+    if auth_response:
+        return auth_response
+
+    include_resolved = request.args.get("include_resolved", "").strip().lower() in ("1", "true", "yes")
+    data = get_student_weak_topics(student_id=student_id, include_resolved=include_resolved)
+    return jsonify({"success": True, "data": data}), 200
+
+
+@analysis_bp.route("/api/weak-topics/<topic_key>/status", methods=["POST", "PUT", "PATCH"])
+def api_update_weak_topic_status(topic_key: str):
+    student_id, auth_response = _require_authenticated_weak_topic_student()
+    if auth_response:
+        return auth_response
+
+    payload = request.get_json(silent=True) or request.form.to_dict()
+    status = (payload.get("status") or "").strip().lower()
+    notes = (payload.get("notes") or "").strip()
+    if not status:
+        return jsonify({"success": False, "error": "Field 'status' is required."}), 400
+
+    success, error = update_weak_topic_status(
+        student_id=student_id,
+        topic_key=topic_key,
+        status=status,
+        notes=notes,
+    )
+    if not success:
+        return jsonify({"success": False, "error": error}), 400
+
+    return jsonify({
+        "success": True,
+        "topic_key": topic_key,
+        "status": status,
+        "notes": notes,
+        "message": f"Topic status updated to '{status}'."
+    }), 200
+
 
 @analysis_bp.route("/")
 @analysis_bp.route("/dashboard")

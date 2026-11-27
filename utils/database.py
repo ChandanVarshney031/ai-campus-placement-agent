@@ -348,6 +348,23 @@ def init_db() -> None:
             )
         """)
 
+        # Table 11b: Store candidate career preferences & aspirations
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS career_preferences (
+                student_id TEXT PRIMARY KEY,
+                target_roles TEXT,
+                target_companies TEXT,
+                preferred_locations TEXT,
+                preferred_work_modes TEXT,
+                preferred_role_types TEXT,
+                expected_salary_min REAL DEFAULT 0,
+                preferred_industries TEXT,
+                primary_skills TEXT,
+                notes TEXT,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
         # Table 12: Store bookmarked coding practice questions (#234)
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS bookmarked_coding_questions (
@@ -957,6 +974,23 @@ def init_db() -> None:
             )
         """)
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_account_lockouts_until ON account_lockouts (locked_until)")
+
+        # Table: Placement readiness activity timeline (#timeline)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS placement_activity_timeline (
+                id TEXT PRIMARY KEY,
+                student_id TEXT NOT NULL,
+                category TEXT NOT NULL,
+                title TEXT NOT NULL,
+                description TEXT,
+                event_date TEXT NOT NULL,
+                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                metadata_json TEXT DEFAULT '{}',
+                is_milestone INTEGER DEFAULT 0
+            )
+        """)
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_placement_timeline_student ON placement_activity_timeline (student_id, event_date DESC)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_placement_timeline_category ON placement_activity_timeline (student_id, category, event_date DESC)")
 
         cursor.execute("PRAGMA table_info(users)")
         user_cols = [c[1] for c in cursor.fetchall()]
@@ -5659,6 +5693,12 @@ def delete_user_account_and_personal_data(student_id: str) -> Dict[str, Any]:
             cursor.execute("DELETE FROM student_profiles WHERE student_id = ?", (student_id,))
             deleted_counts["student_profiles"] = cursor.rowcount
 
+        # 13b. Delete career preferences if exists
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='career_preferences'")
+        if cursor.fetchone():
+            cursor.execute("DELETE FROM career_preferences WHERE student_id = ?", (student_id,))
+            deleted_counts["career_preferences"] = cursor.rowcount
+
         # 14. Delete bookmarked coding questions if exists
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='bookmarked_coding_questions'")
         if cursor.fetchone():
@@ -5680,6 +5720,12 @@ def delete_user_account_and_personal_data(student_id: str) -> Dict[str, Any]:
         # 15b. Delete server-side authentication sessions
         cursor.execute("DELETE FROM auth_sessions WHERE user_id = ?", (student_id,))
         deleted_counts["auth_sessions"] = cursor.rowcount
+
+        # 15c. Delete placement activity timeline records
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='placement_activity_timeline'")
+        if cursor.fetchone():
+            cursor.execute("DELETE FROM placement_activity_timeline WHERE student_id = ?", (student_id,))
+            deleted_counts["placement_activity_timeline"] = cursor.rowcount
 
         # 16. Finally, delete the student account from users table
         cursor.execute("DELETE FROM users WHERE id = ?", (student_id,))

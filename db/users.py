@@ -463,17 +463,28 @@ def get_email_notification_preferences(student_id: str) -> Dict[str, Any]:
         )
         row = cursor.fetchone()
         if row:
-            return dict(row)
+            rec = dict(row)
+            return {
+                "student_id": rec["student_id"],
+                "email": rec.get("email") or "",
+                "output_language": rec.get("output_language") or "en",
+                "email_enabled": bool(rec.get("email_enabled", 1)),
+                "notify_welcome": bool(rec.get("notify_welcome", 1)),
+                "notify_application_created": bool(rec.get("notify_application_created", 1)),
+                "notify_status_change": bool(rec.get("notify_status_change", 1)),
+                "notify_interview_reminder": bool(rec.get("notify_interview_reminder", 1)),
+                "notify_deadline_reminder": bool(rec.get("notify_deadline_reminder", 1)),
+            }
         return {
             "student_id": student_id,
             "email": "",
             "output_language": "en",
-            "email_enabled": 1,
-            "notify_welcome": 1,
-            "notify_application_created": 1,
-            "notify_status_change": 1,
-            "notify_interview_reminder": 1,
-            "notify_deadline_reminder": 1
+            "email_enabled": True,
+            "notify_welcome": True,
+            "notify_application_created": True,
+            "notify_status_change": True,
+            "notify_interview_reminder": True,
+            "notify_deadline_reminder": True
         }
 
 

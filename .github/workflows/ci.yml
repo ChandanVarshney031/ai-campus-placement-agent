@@ -81,7 +81,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install flake8 black isort
+          pip install flake8 black isort mypy
 
       - name: Run Flake8 Critical Error Check
         run: |
@@ -92,6 +92,11 @@ jobs:
         run: |
           # Report complexity and style warnings
           flake8 . --count --exit-zero --max-complexity=15 --max-line-length=127 --statistics
+
+      - name: Run Mypy Gradual Static Type Check
+        run: |
+          # Run mypy on clean, strictly type-checked modules
+          mypy --config-file mypy.ini utils/text_cleaner.py utils/score_explanations.py utils/input_validator.py utils/email_domain_validator.py utils/sri_validator.py
 
       - name: Run Black Code Formatting Check
         run: black --check .

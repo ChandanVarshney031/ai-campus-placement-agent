@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>Placement Cell Readiness Analytics | Admin Portal</title>
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
+  <!-- FontAwesome Icons -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" integrity="sha384-iw3OoTErCYJJB9mCa8LNS2hbsQ7M3C0EpIsO/H5+EGAkPGc6rk+V8i04oW/K5xq0" crossorigin="anonymous">
+  <!-- Custom CSS -->
+  <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+  <style>
+    .badge-ats-high { background-color: #198754; color: #fff; }
+    .badge-ats-mid { background-color: #0d6efd; color: #fff; }
+    .badge-ats-low { background-color: #ffc107; color: #000; }
+    .badge-ats-critical { background-color: #dc3545; color: #fff; }
+    .table-hover tbody tr:hover { background-color: rgba(0, 0, 0, 0.02); }
+    .card-kpi { border-radius: 12px; transition: transform 0.15s ease-in-out; }
+    .card-kpi:hover { transform: translateY(-2px); }
+    .skill-badge { font-size: 0.8rem; margin: 2px; }
+    .funnel-step { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.78rem; font-weight: 600; margin-right: 4px; }
+  </style>
+</head>
+<body class="bg-light">
+
+  <!-- Top Navigation Bar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom py-2 py-md-3">
+    <div class="container d-flex flex-wrap align-items-center justify-content-between gap-2">
+      <a class="navbar-brand fs-5 fw-bold text-white text-truncate" href="/admin/readiness-analytics">
+        <i class="fa-solid fa-chart-column text-primary me-2"></i>Admin &bull; Placement Readiness Analytics
+      </a>
+      <div class="d-flex align-items-center flex-wrap gap-2 ms-auto ms-lg-0">
+        <a href="/admin/users" class="btn btn-outline-info btn-sm rounded-pill px-3">
+          <i class="fa-solid fa-users me-1"></i> User Directory
+        </a>
+        <a href="/admin/feature-flags" class="btn btn-outline-warning btn-sm rounded-pill px-3 text-warning">
+          <i class="fa-solid fa-flag me-1"></i> Feature Flags
+        </a>
+        <a href="/admin/batch-analytics" class="btn btn-outline-light btn-sm rounded-pill px-3">
+          <i class="fa-solid fa-chart-pie me-1"></i> Batch Analytics
+        </a>
+        <a href="/admin/intervention-queue" class="btn btn-outline-secondary btn-sm rounded-pill px-3 text-white">
+          <i class="fa-solid fa-user-clock me-1"></i> Interventions
+        </a>
+        <a href="/" class="btn btn-outline-secondary btn-sm rounded-pill px-3 text-white">
+          <i class="fa-solid fa-house me-1"></i> Home
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Container -->
+  <main class="container py-4 py-md-5">
+
+    <!-- Privacy Alert Banner -->
+    <div class="alert alert-info border-0 shadow-sm d-flex align-items-start gap-3 mb-4 rounded-3" role="alert">
+      <i class="fa-solid fa-shield-halved fs-4 text-info mt-1"></i>
+      <div>
+        <h5 class="alert-heading fw-bold mb-1">Privacy-Preserving Cohort Aggregation (k-Anonymity)</h5>
+        <p class="mb-0 small text-secondary">
+          Student privacy is strictly protected. Individual student names, emails, and identifiers are completely withheld.
+          Cohorts smaller than <strong>{{ data.summary.min_group_size }} students</strong> are automatically merged into <em>"Other (Cohorts &lt; {{ data.summary.min_group_size }})"</em> to eliminate re-identification risks.
+        </p>
+      </div>
+    </div>
+
+    <!-- Header & Action Row -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+      <div>
+        <h2 class="h3 fw-bold text-dark mb-1">
+          <i class="fa-solid fa-graduation-cap text-primary me-2"></i>Campus Placement Readiness Overview
+        </h2>
+        <p class="text-secondary small mb-0">
+          Cohort-level skill gap deficits, ATS resume benchmarks, practice activity, and recruitment funnel progression.
+        </p>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <a id="exportCsvBtn" href="/admin/readiness-analytics/export.csv?department={{ data.filters.selected_department }}&graduation_year={{ data.filters.selected_year }}&min_group_size={{ data.summary.min_group_size }}" class="btn btn-outline-success shadow-sm rounded-pill px-3">
+          <i class="fa-solid fa-file-csv me-1"></i> Export Aggregates (CSV)
+        </a>
+      </div>
+    </div>
+
+    <!-- Summary KPI Cards -->
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-lg-3">
+        <div class="card card-kpi border-0 shadow-sm p-3 bg-white h-100">
+          <div class="d-flex align-items-center justify-content-between">
+            <span class="text-secondary small fw-semibold">Active Students</span>
+            <div class="badge bg-primary-subtle text-primary rounded-circle p-2">
+              <i class="fa-solid fa-user-graduate"></i>
+            </div>
+          </div>
+          <h3 class="fw-bold text-dark mt-2 mb-0">{{ data.summary.total_students }}</h3>
+          <span class="text-muted small">across {{ data.summary.total_cohorts }} cohorts</span>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3">
+        <div class="card card-kpi border-0 shadow-sm p-3 bg-white h-100">
+          <div class="d-flex align-items-center justify-content-between">
+            <span class="text-secondary small fw-semibold">Average ATS Score</span>
+            <div class="badge bg-success-subtle text-success rounded-circle p-2">
+              <i class="fa-solid fa-file-invoice"></i>
+            </div>
+          </div>
+          <h3 class="fw-bold text-dark mt-2 mb-0">
+            {% if data.summary.overall_average_ats_score > 0 %}
+              {{ data.summary.overall_average_ats_score }}<span class="fs-6 text-muted">/100</span>
+            {% else %}
+              <span class="text-muted fs-6">N/A</span>
+            {% endif %}
+          </h3>
+          <span class="text-muted small">mean resume match score</span>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3">
+        <div class="card card-kpi border-0 shadow-sm p-3 bg-white h-100">
+          <div class="d-flex align-items-center justify-content-between">
+            <span class="text-secondary small fw-semibold">Practice Volume</span>
+            <div class="badge bg-info-subtle text-info rounded-circle p-2">
+              <i class="fa-solid fa-code"></i>
+            </div>
+          </div>
+          <h3 class="fw-bold text-dark mt-2 mb-0">{{ data.summary.total_practice_activity }}</h3>
+          <span class="text-muted small">coding &amp; mock interviews</span>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3">
+        <div class="card card-kpi border-0 shadow-sm p-3 bg-white h-100">
+          <div class="d-flex align-items-center justify-content-between">
+            <span class="text-secondary small fw-semibold">Placement Offers</span>
+            <div class="badge bg-warning-subtle text-warning rounded-circle p-2">
+              <i class="fa-solid fa-award"></i>
+            </div>
+          </div>
+          <h3 class="fw-bold text-dark mt-2 mb-0">{{ data.summary.total_offers }}</h3>
+          <span class="text-muted small">out of {{ data.summary.total_applications }} applications</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filters Bar -->
+    <div class="card border-0 shadow-sm p-3 mb-4 bg-white rounded-3">
+      <form method="GET" action="/admin/readiness-analytics" class="row g-2 align-items-center">
+        <div class="col-12 col-md-4">
+          <label class="form-label small text-secondary mb-1">Branch / Department</label>
+          <select name="department" class="form-select form-select-sm">
+            <option value="all" {% if data.filters.selected_department == 'all' %}selected{% endif %}>All Departments</option>
+            {% for dept in data.filters.departments %}
+              <option value="{{ dept }}" {% if data.filters.selected_department == dept %}selected{% endif %}>{{ dept }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-12 col-md-3">
+          <label class="form-label small text-secondary mb-1">Graduation Year</label>
+          <select name="graduation_year" class="form-select form-select-sm">
+            <option value="all" {% if data.filters.selected_year|string == 'all' %}selected{% endif %}>All Batch Years</option>
+            {% for yr in data.filters.graduation_years %}
+              <option value="{{ yr }}" {% if data.filters.selected_year|string == yr|string %}selected{% endif %}>{{ yr }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-12 col-md-3">
+          <label class="form-label small text-secondary mb-1">Min Group Size (k-Anonymity)</label>
+          <select name="min_group_size" class="form-select form-select-sm">
+            <option value="3" {% if data.summary.min_group_size == 3 %}selected{% endif %}>Min 3 students</option>
+            <option value="5" {% if data.summary.min_group_size == 5 %}selected{% endif %}>Min 5 students (Standard)</option>
+            <option value="10" {% if data.summary.min_group_size == 10 %}selected{% endif %}>Min 10 students (High Privacy)</option>
+          </select>
+        </div>
+        <div class="col-12 col-md-2 d-flex gap-2 align-items-end mt-3 mt-md-0">
+          <button type="submit" class="btn btn-primary btn-sm w-100 mt-md-4 rounded-pill">
+            <i class="fa-solid fa-filter me-1"></i> Apply
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Cohorts Data Table -->
+    <div class="card border-0 shadow-sm bg-white rounded-3 overflow-hidden">
+      <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+        <h5 class="card-title fw-bold text-dark mb-0 fs-6">
+          <i class="fa-solid fa-layer-group text-primary me-2"></i>Aggregated Cohort Readouts
+        </h5>
+        <span class="badge bg-secondary-subtle text-secondary">{{ data.cohorts|length }} Groups</span>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light small text-secondary text-uppercase">
+            <tr>
+              <th scope="col" style="min-width: 180px;">Branch / Department</th>
+              <th scope="col" class="text-center" style="min-width: 100px;">Batch Year</th>
+              <th scope="col" class="text-center" style="min-width: 100px;">Active Students</th>
+              <th scope="col" class="text-center" style="min-width: 120px;">Avg ATS Score</th>
+              <th scope="col" style="min-width: 220px;">Common Missing Skills</th>
+              <th scope="col" class="text-center" style="min-width: 130px;">Practice Activity</th>
+              <th scope="col" style="min-width: 240px;">Recruitment Funnel</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if data.cohorts %}
+              {% for cohort in data.cohorts %}
+                <tr {% if cohort.is_other %}class="table-warning bg-opacity-10"{% endif %}>
+                  <td>
+                    <div class="fw-bold text-dark">
+                      {{ cohort.department }}
+                      {% if cohort.is_other %}
+                        <span class="badge bg-warning text-dark ms-1 small" title="Merged small groups to maintain k-anonymity">
+                          <i class="fa-solid fa-user-shield me-1"></i>Protected (&lt; {{ data.summary.min_group_size }})
+                        </span>
+                      {% endif %}
+                    </div>
+                  </td>
+                  <td class="text-center">
+                    <span class="badge bg-light text-dark border">{{ cohort.graduation_year }}</span>
+                  </td>
+                  <td class="text-center fw-bold text-primary">
+                    {{ cohort.active_students }}
+                  </td>
+                  <td class="text-center">
+                    {% if cohort.average_ats_score >= 80 %}
+                      <span class="badge badge-ats-high px-2 py-1 rounded-pill">{{ cohort.average_ats_score }}%</span>
+                    {% elif cohort.average_ats_score >= 65 %}
+                      <span class="badge badge-ats-mid px-2 py-1 rounded-pill">{{ cohort.average_ats_score }}%</span>
+                    {% elif cohort.average_ats_score > 0 %}
+                      <span class="badge badge-ats-low px-2 py-1 rounded-pill">{{ cohort.average_ats_score }}%</span>
+                    {% else %}
+                      <span class="badge bg-secondary px-2 py-1 rounded-pill">No Data</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if cohort.top_missing_skills %}
+                      {% for sk in cohort.top_missing_skills %}
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle skill-badge">
+                          {{ sk.skill }} ({{ sk.count }})
+                        </span>
+                      {% endfor %}
+                    {% else %}
+                      <span class="text-muted small fst-italic">None identified</span>
+                    {% endif %}
+                  </td>
+                  <td class="text-center">
+                    <span class="fw-bold text-dark">{{ cohort.practice_activity_count }}</span>
+                    <div class="small text-muted" style="font-size: 0.72rem;">
+                      {{ cohort.coding_submissions_count }} code &bull; {{ cohort.interview_sessions_count }} int
+                    </div>
+                  </td>
+                  <td>
+                    <div>
+                      <span class="funnel-step bg-light text-secondary border" title="Applied">
+                        App: {{ cohort.funnel.applied }}
+                      </span>
+                      <span class="funnel-step bg-info-subtle text-info" title="Assessment / Screening">
+                        Assess: {{ cohort.funnel.assessment }}
+                      </span>
+                      <span class="funnel-step bg-primary-subtle text-primary" title="Interview">
+                        Int: {{ cohort.funnel.interview }}
+                      </span>
+                      <span class="funnel-step bg-success-subtle text-success" title="Offer / Placed">
+                        Offer: {{ cohort.funnel.offer }}
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td colspan="7" class="text-center py-5 text-muted">
+                  <i class="fa-solid fa-folder-open fs-2 mb-2 d-block text-secondary"></i>
+                  No student cohort data available for the chosen criteria.
+                </td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Bootstrap Bundle JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
+</body>
+</html>

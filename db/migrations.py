@@ -305,6 +305,22 @@ def _migration_004_coding_practice_and_interviews(cursor: sqlite3.Cursor) -> Non
     """)
 
     cursor.execute("""
+        CREATE TABLE IF NOT EXISTS career_preferences (
+            student_id TEXT PRIMARY KEY,
+            target_roles TEXT,
+            target_companies TEXT,
+            preferred_locations TEXT,
+            preferred_work_modes TEXT,
+            preferred_role_types TEXT,
+            expected_salary_min REAL DEFAULT 0,
+            preferred_industries TEXT,
+            primary_skills TEXT,
+            notes TEXT,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS bookmarked_coding_questions (
             id TEXT PRIMARY KEY,
             student_id TEXT NOT NULL DEFAULT 'default_student',
@@ -836,6 +852,25 @@ def _migration_017_learning_resource_progress(cursor: sqlite3.Cursor) -> None:
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_slrp_resource_id ON student_learning_resource_progress(resource_id)")
 
 
+def _migration_018_placement_activity_timeline(cursor: sqlite3.Cursor) -> None:
+    """Create placement activity timeline table for tracking readiness milestones and custom events."""
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS placement_activity_timeline (
+            id TEXT PRIMARY KEY,
+            student_id TEXT NOT NULL,
+            category TEXT NOT NULL,
+            title TEXT NOT NULL,
+            description TEXT,
+            event_date TEXT NOT NULL,
+            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            metadata_json TEXT DEFAULT '{}',
+            is_milestone INTEGER DEFAULT 0
+        )
+    """)
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_placement_timeline_student ON placement_activity_timeline (student_id, event_date DESC)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_placement_timeline_category ON placement_activity_timeline (student_id, category, event_date DESC)")
+
+
 MIGRATIONS: List[Migration] = [
     Migration("001_core_schema", "Create analyses, interviews, users, job applications, cohort benchmarks", _migration_001_core_schema),
     Migration("002_user_auth_and_sessions", "Create auth_sessions, notification preferences, feedback, assessments", _migration_002_user_auth_and_sessions),
@@ -854,6 +889,7 @@ MIGRATIONS: List[Migration] = [
     Migration("015_account_lockouts", "Create account lockout tracking tables", _migration_015_account_lockouts),
     Migration("016_faculty_interventions", "Create faculty intervention tables", _migration_010_faculty_interventions),
     Migration("017_learning_resource_progress", "Create learning resource progress table", _migration_017_learning_resource_progress),
+    Migration("018_placement_activity_timeline", "Create placement_activity_timeline table for readiness activity tracking", _migration_018_placement_activity_timeline),
 ]
 
 

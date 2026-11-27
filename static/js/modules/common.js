@@ -12,6 +12,8 @@
 import { escapeHtml, initCsrfFetch } from "./utils.js";
 import { initThemeToggle } from "./theme.js";
 import { initChartAccessibility, toggleChartTableView } from "./chart_accessibility.js";
+import { getMotionPreference, initMotionPreference, isReducedMotion, setMotionPreference } from "./motion.js";
+import { initKeyboardShortcuts } from "./keyboard_shortcuts.js";
 
 /**
  * Clear all interview draft answers from browser storage (#475).
