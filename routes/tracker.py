@@ -58,6 +58,13 @@ from utils.pagination import Pagination
 from utils.cohort_analytics import CohortAnalyticsService
 from utils.resume_info_extractor import *
 from utils.resume_pii_service import pii_service, REDACTION_TOKENS
+from utils.readiness_timeline_service import (
+    get_placement_activity_timeline,
+    get_readiness_effort_summary,
+    log_placement_activity,
+    ALL_CATEGORIES,
+    CATEGORY_META,
+)
 from utils.analysis_cache import *
 from utils.batch_analyzer import run_batch_company_comparison
 from agents.job_recommendation_agent import JobRecommendationAgent

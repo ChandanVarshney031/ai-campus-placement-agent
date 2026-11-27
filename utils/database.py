@@ -348,6 +348,23 @@ def init_db() -> None:
             )
         """)
 
+        # Table 11b: Store candidate career preferences & aspirations
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS career_preferences (
+                student_id TEXT PRIMARY KEY,
+                target_roles TEXT,
+                target_companies TEXT,
+                preferred_locations TEXT,
+                preferred_work_modes TEXT,
+                preferred_role_types TEXT,
+                expected_salary_min REAL DEFAULT 0,
+                preferred_industries TEXT,
+                primary_skills TEXT,
+                notes TEXT,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
         # Table 12: Store bookmarked coding practice questions (#234)
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS bookmarked_coding_questions (
@@ -5722,6 +5739,12 @@ def delete_user_account_and_personal_data(student_id: str) -> Dict[str, Any]:
         if cursor.fetchone():
             cursor.execute("DELETE FROM student_profiles WHERE student_id = ?", (student_id,))
             deleted_counts["student_profiles"] = cursor.rowcount
+
+        # 13b. Delete career preferences if exists
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='career_preferences'")
+        if cursor.fetchone():
+            cursor.execute("DELETE FROM career_preferences WHERE student_id = ?", (student_id,))
+            deleted_counts["career_preferences"] = cursor.rowcount
 
         # 14. Delete bookmarked coding questions if exists
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='bookmarked_coding_questions'")

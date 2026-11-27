@@ -305,6 +305,22 @@ def _migration_004_coding_practice_and_interviews(cursor: sqlite3.Cursor) -> Non
     """)
 
     cursor.execute("""
+        CREATE TABLE IF NOT EXISTS career_preferences (
+            student_id TEXT PRIMARY KEY,
+            target_roles TEXT,
+            target_companies TEXT,
+            preferred_locations TEXT,
+            preferred_work_modes TEXT,
+            preferred_role_types TEXT,
+            expected_salary_min REAL DEFAULT 0,
+            preferred_industries TEXT,
+            primary_skills TEXT,
+            notes TEXT,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS bookmarked_coding_questions (
             id TEXT PRIMARY KEY,
             student_id TEXT NOT NULL DEFAULT 'default_student',

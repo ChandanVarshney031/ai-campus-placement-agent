@@ -1196,6 +1196,31 @@ def api_admin_feature_flag_audit_logs(flag_key: str):
     return jsonify({"success": True, "logs": logs}), 200
 
 
+@admin_bp.route("/api/admin/inactive-accounts/process", methods=["POST"])
+def api_admin_process_inactive_accounts():
+    """
+    Triggers automated retention evaluation for inactive accounts (#888).
+    Restricted to administrator access.
+    """
+    if not _check_admin_access():
+        return jsonify({"success": False, "error": "Unauthorized: Administrator access required."}), 403
 
+    from utils.account_retention_service import process_inactive_accounts
+    payload = request.get_json(silent=True) or request.form.to_dict()
+    retention_days = (
+        payload.get("retention_days")
+        or payload.get("days")
+        or request.args.get("retention_days")
+        or request.args.get("days")
+    )
+    if retention_days is not None:
+        try:
+            retention_days = int(retention_days)
+        except (ValueError, TypeError):
+            retention_days = None
+    dry_run = bool(payload.get("dry_run") or request.args.get("dry_run"))
+
+    result = process_inactive_accounts(retention_days=retention_days, dry_run=dry_run)
+    return jsonify({"success": True, "result": result}), 200
 
 

@@ -852,4 +852,142 @@ def api_update_weekly_summary_preferences():
     return jsonify({"status": "success", "is_enabled": is_enabled}), 200
 
 
+# ==============================================================================
+# Preparation Plan Sharing with Mentors & Faculty (#mentor-share)
+# ==============================================================================
+
+@reports_bp.route("/api/preparation-plans/share", methods=["POST"])
+def api_create_preparation_plan_share():
+    """
+    Creates an expiring, secure read-only preparation-plan share link for mentors/faculty.
+    Allows students to share selected goals while strictly redacting personal notes
+    and hiding private job application details.
+    """
+    from utils.mentor_plan_share_service import create_shared_plan_link
+
+    payload = request.get_json(silent=True) or request.form or {}
+    student_id = (
+        payload.get("student_id")
+        or flask_session.get("user_id")
+        or flask_session.get("student_id")
+        or "default_student"
+    ).strip()
+
+    goal_ids = payload.get("goal_ids")
+    if isinstance(goal_ids, str):
+        try:
+            goal_ids = json.loads(goal_ids)
+        except Exception:
+            goal_ids = [int(x.strip()) for x in goal_ids.split(",") if x.strip().isdigit()]
+    elif isinstance(goal_ids, int):
+        goal_ids = [goal_ids]
+    elif not isinstance(goal_ids, list) and goal_ids is not None:
+        goal_ids = None
+
+    plan_title = payload.get("plan_title")
+    mentor_name = payload.get("mentor_name")
+    mentor_email = payload.get("mentor_email")
+    expiration = payload.get("expiration", "30d")
+
+    try:
+        res = create_shared_plan_link(
+            student_id=student_id,
+            goal_ids=goal_ids,
+            mentor_name=mentor_name,
+            mentor_email=mentor_email,
+            plan_title=plan_title,
+            expiration=expiration,
+        )
+        return jsonify(res), 201
+    except ValueError as ve:
+        return jsonify({"success": False, "error": str(ve)}), 400
+    except Exception as e:
+        logger.error(f"Error creating preparation plan share link: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@reports_bp.route("/api/preparation-plans/shares", methods=["GET"])
+def api_list_preparation_plan_shares():
+    """
+    Lists preparation-plan share links created by the current student.
+    Includes view count, expiration status, and target goals count.
+    """
+    from utils.mentor_plan_share_service import list_student_shared_plans
+
+    student_id = (
+        request.args.get("student_id")
+        or flask_session.get("user_id")
+        or flask_session.get("student_id")
+        or "default_student"
+    ).strip()
+
+    try:
+        shares = list_student_shared_plans(student_id)
+        return jsonify({"success": True, "shares": shares}), 200
+    except Exception as e:
+        logger.error(f"Error listing preparation plan shares: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@reports_bp.route("/api/preparation-plans/share/<share_id>/revoke", methods=["POST"])
+def api_revoke_preparation_plan_share(share_id):
+    """
+    Revokes an active preparation plan share link immediately.
+    Guarantees that only the owner who created the link can revoke it.
+    """
+    from utils.mentor_plan_share_service import revoke_shared_plan_link, PlanSharePermissionError
+
+    payload = request.get_json(silent=True) or request.form or {}
+    student_id = (
+        payload.get("student_id")
+        or flask_session.get("user_id")
+        or flask_session.get("student_id")
+        or "default_student"
+    ).strip()
+
+    try:
+        success = revoke_shared_plan_link(student_id=student_id, share_id=share_id)
+        if success:
+            return jsonify({"success": True, "message": "Preparation plan share link revoked successfully."}), 200
+        return jsonify({"success": False, "error": "Share link not found or already inactive."}), 404
+    except PlanSharePermissionError as pe:
+        return jsonify({"success": False, "error": str(pe)}), 403
+    except Exception as e:
+        logger.error(f"Error revoking preparation plan share: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@reports_bp.route("/shared/plan/<token>", methods=["GET"])
+@reports_bp.route("/shared/preparation-plan/<token>", methods=["GET"])
+def view_shared_preparation_plan(token):
+    """
+    Renders read-only preparation plan view for mentors and faculty.
+    Sends noindex headers and requires no authentication.
+    """
+    from utils.mentor_plan_share_service import get_shared_plan_by_token
+
+    valid, plan_data, err = get_shared_plan_by_token(token)
+    if not valid:
+        resp = make_response(render_template("shared_report_error.html", error_message=err), 404)
+        resp.headers["X-Robots-Tag"] = "noindex, nofollow, noarchive"
+        return resp
+
+    resp = make_response(render_template("shared_preparation_plan.html", plan=plan_data))
+    resp.headers["X-Robots-Tag"] = "noindex, nofollow, noarchive"
+    return resp
+
+
+@reports_bp.route("/api/shared/plan/<token>", methods=["GET"])
+def api_get_shared_preparation_plan(token):
+    """
+    Returns sanitized preparation plan data in JSON format for mentors and external viewers.
+    """
+    from utils.mentor_plan_share_service import get_shared_plan_by_token
+
+    valid, plan_data, err = get_shared_plan_by_token(token)
+    if not valid:
+        return jsonify({"success": False, "error": err}), 404
+    return jsonify({"success": True, "plan": plan_data}), 200
+
+
 

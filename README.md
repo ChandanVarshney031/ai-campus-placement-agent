@@ -944,6 +944,7 @@ Here are solutions to the most common setup and runtime issues:
 
 We take application security and dependency hygiene seriously:
 - **Automated Dual-Ecosystem Scans**: CI workflows audit Python (`requirements.txt`) and JavaScript (`package.json`) dependencies on every pull request and weekly schedule.
+- **OWASP ZAP Baseline Security Scan (#890)**: Automated passive baseline scanning in CI against core public and authenticated routes to guard against missing security headers, insecure cookies, and injection vulnerabilities. See [docs/ZAP_SECURITY_SCAN.md](docs/ZAP_SECURITY_SCAN.md).
 - **Maintainer Guide**: See [docs/DEPENDENCY_SECURITY.md](docs/DEPENDENCY_SECURITY.md) for step-by-step instructions on reviewing, remediating, and managing time-limited exemptions.
 - **Security Policy & Responsible Disclosure**: See [SECURITY.md](SECURITY.md) for reporting vulnerabilities privately.
 

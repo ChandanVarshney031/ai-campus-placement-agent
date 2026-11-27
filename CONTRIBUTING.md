@@ -82,7 +82,7 @@ Before submitting code changes or exploring new features, contributors are stron
 
 5. Visit `http://127.0.0.1:5000/` in your browser
 
-6. Verify local tests and lint checks (matching CI workflow):
+6. Verify local tests, static typing, and lint checks (matching CI workflow):
    ```bash
    # Run flake8 critical syntax and undefined name checks
    flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
@@ -90,10 +90,34 @@ Before submitting code changes or exploring new features, contributors are stron
    # Run automated pytest test suite
    pytest
 
+   # Run mypy static type check on strict utility modules
+   mypy --config-file mypy.ini utils/text_cleaner.py utils/score_explanations.py utils/input_validator.py utils/email_domain_validator.py utils/sri_validator.py
+
    # Run pre-flight diagnostic validators
    python utils/ci_pipeline_validator.py
    python utils/deployment_check.py
    ```
+
+### Static Type Checking Policy (mypy)
+
+We are gradually adopting static type annotations with `mypy` to improve code clarity and catch type bugs early:
+1. **New Python Files Must Be Fully Typed**:
+   All new functions, classes, and methods introduced in new modules must include complete argument and return type annotations.
+2. **Strict Modules List**:
+   Cleaned utility modules (`utils/text_cleaner.py`, `utils/score_explanations.py`, `utils/input_validator.py`, `utils/email_domain_validator.py`, `utils/sri_validator.py`) are strictly verified in CI. In these modules, removing type annotations or introducing type mismatches will fail CI.
+3. **How to Add a Module to the Strict List**:
+   - Annotate all functions, parameters, and return values in the target module.
+   - Run `mypy --config-file mypy.ini path/to/module.py` locally and ensure it passes cleanly.
+   - Add a strict section for your module in `mypy.ini`:
+     ```ini
+     [mypy-your_package.your_module]
+     disallow_untyped_defs = true
+     disallow_incomplete_defs = true
+     check_untyped_defs = true
+     no_implicit_optional = true
+     warn_unused_ignores = true
+     ```
+   - Add the module path to the `Run Mypy Gradual Static Type Check` step in `.github/workflows/ci.yml` and `CLEAN_MODULES` in `tests/test_mypy_typing.py`.
 
 ## Contributing Guidelines
 
@@ -285,6 +309,28 @@ The browser test walks through the entire candidate journey without requiring li
    ```bash
    playwright show-trace test-results/.../trace.zip
    ```
+
+### OWASP ZAP Baseline Security Scan (#890)
+
+To ensure that newly contributed routes and templates maintain robust security headers, proper cookie flags, and secure input handling, an automated **OWASP ZAP Baseline Passive Scan** runs in CI and can be executed locally:
+
+```bash
+# Run local passive baseline scan
+python utils/zap_scanner.py --rules .zap/rules.tsv --report zap-report.html --json zap-report.json
+
+# Or run tests verifying rules and header enforcement
+pytest tests/test_zap_baseline_scan.py -v
+```
+
+If Docker is available, you can also run the official OWASP ZAP container:
+```bash
+docker run --rm -v $(pwd):/zap/wrk/:rw -t ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
+  -t http://host.docker.internal:5000 \
+  -c .zap/rules.tsv \
+  -r zap-report.html
+```
+
+For complete details on configuring `.zap/rules.tsv`, reviewing rules, and required written reasons for ignored rules, refer to [docs/ZAP_SECURITY_SCAN.md](docs/ZAP_SECURITY_SCAN.md).
 
 ### Route Organization & Where to Add New Routes (#553)
 
