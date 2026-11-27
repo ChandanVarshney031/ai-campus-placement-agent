@@ -99,7 +99,7 @@ def test_rendered_page_reflects_locale(client):
     res = client.get("/")
     assert res.status_code == 200
     html = res.data.decode("utf-8")
-    assert "स्मार्ट तैयारी करें। जल्दी प्लेसमेंट पाएं।" in html
+    assert "हर कदम पर बेहतर तैयारी करें।" in html
     assert "लॉग आउट" in html or "लॉग इन करें" in html
 
     # Switch back to English
@@ -107,4 +107,4 @@ def test_rendered_page_reflects_locale(client):
     res = client.get("/")
     assert res.status_code == 200
     html = res.data.decode("utf-8")
-    assert "Prepare Smart. Get Placed Faster." in html
+    assert "Get placement-ready, one focused step at a time." in html

@@ -348,6 +348,23 @@ def init_db() -> None:
             )
         """)
 
+        # Table 11b: Store candidate career preferences & aspirations
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS career_preferences (
+                student_id TEXT PRIMARY KEY,
+                target_roles TEXT,
+                target_companies TEXT,
+                preferred_locations TEXT,
+                preferred_work_modes TEXT,
+                preferred_role_types TEXT,
+                expected_salary_min REAL DEFAULT 0,
+                preferred_industries TEXT,
+                primary_skills TEXT,
+                notes TEXT,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
         # Table 12: Store bookmarked coding practice questions (#234)
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS bookmarked_coding_questions (
@@ -957,6 +974,70 @@ def init_db() -> None:
             )
         """)
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_account_lockouts_until ON account_lockouts (locked_until)")
+
+        # Tables: Peer goal accountability groups & member progress (#peer-groups)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS peer_accountability_groups (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                description TEXT,
+                creator_student_id TEXT NOT NULL,
+                invite_code TEXT UNIQUE NOT NULL,
+                is_private INTEGER DEFAULT 1,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_peer_groups_invite ON peer_accountability_groups (invite_code)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_peer_groups_creator ON peer_accountability_groups (creator_student_id)")
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS peer_group_members (
+                id TEXT PRIMARY KEY,
+                group_id TEXT NOT NULL,
+                student_id TEXT NOT NULL,
+                display_name TEXT NOT NULL,
+                role TEXT NOT NULL DEFAULT 'member',
+                share_progress INTEGER DEFAULT 1,
+                joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(group_id, student_id),
+                FOREIGN KEY (group_id) REFERENCES peer_accountability_groups(id) ON DELETE CASCADE
+            )
+        """)
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_peer_members_student ON peer_group_members (student_id)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_peer_members_group ON peer_group_members (group_id)")
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS peer_group_goals (
+                id TEXT PRIMARY KEY,
+                group_id TEXT NOT NULL,
+                title TEXT NOT NULL,
+                category TEXT NOT NULL DEFAULT 'general',
+                target_count INTEGER DEFAULT 1,
+                target_date TEXT,
+                description TEXT,
+                created_by_student_id TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (group_id) REFERENCES peer_accountability_groups(id) ON DELETE CASCADE
+            )
+        """)
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_peer_goals_group ON peer_group_goals (group_id)")
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS peer_group_member_progress (
+                id TEXT PRIMARY KEY,
+                goal_id TEXT NOT NULL,
+                student_id TEXT NOT NULL,
+                completed_count INTEGER DEFAULT 0,
+                is_completed INTEGER DEFAULT 0,
+                completed_at TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(goal_id, student_id),
+                FOREIGN KEY (goal_id) REFERENCES peer_group_goals(id) ON DELETE CASCADE
+            )
+        """)
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_peer_progress_goal_student ON peer_group_member_progress (goal_id, student_id)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_peer_progress_student ON peer_group_member_progress (student_id)")
 
         cursor.execute("PRAGMA table_info(users)")
         user_cols = [c[1] for c in cursor.fetchall()]
@@ -5659,6 +5740,12 @@ def delete_user_account_and_personal_data(student_id: str) -> Dict[str, Any]:
             cursor.execute("DELETE FROM student_profiles WHERE student_id = ?", (student_id,))
             deleted_counts["student_profiles"] = cursor.rowcount
 
+        # 13b. Delete career preferences if exists
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='career_preferences'")
+        if cursor.fetchone():
+            cursor.execute("DELETE FROM career_preferences WHERE student_id = ?", (student_id,))
+            deleted_counts["career_preferences"] = cursor.rowcount
+
         # 14. Delete bookmarked coding questions if exists
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='bookmarked_coding_questions'")
         if cursor.fetchone():
@@ -5680,6 +5767,17 @@ def delete_user_account_and_personal_data(student_id: str) -> Dict[str, Any]:
         # 15b. Delete server-side authentication sessions
         cursor.execute("DELETE FROM auth_sessions WHERE user_id = ?", (student_id,))
         deleted_counts["auth_sessions"] = cursor.rowcount
+
+        # 15c. Delete peer accountability group memberships and goal progress
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='peer_group_member_progress'")
+        if cursor.fetchone():
+            cursor.execute("DELETE FROM peer_group_member_progress WHERE student_id = ?", (student_id,))
+            deleted_counts["peer_group_member_progress"] = cursor.rowcount
+
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='peer_group_members'")
+        if cursor.fetchone():
+            cursor.execute("DELETE FROM peer_group_members WHERE student_id = ?", (student_id,))
+            deleted_counts["peer_group_members"] = cursor.rowcount
 
         # 16. Finally, delete the student account from users table
         cursor.execute("DELETE FROM users WHERE id = ?", (student_id,))

@@ -36,128 +36,99 @@
   </script>
 </head>
 
-<body>
+<body class="app-body dashboard-page">
   <!-- Accessibility Skip-to-Content Link -->
   <a href="#dashboardContainer" class="skip-link">Skip to main content</a>
 
   <!-- Navigation -->
-  <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom py-2 py-md-3" aria-label="Main navigation">
-    <div class="container d-flex flex-wrap align-items-center justify-content-between gap-2">
-      <a class="navbar-brand navbar-brand-custom fs-5 fs-md-4 text-truncate" href="/">
-        <i class="fa-solid fa-graduation-cap"></i> AI Campus <span class="d-inline">Placement Agent</span>
+  <nav class="navbar navbar-expand-lg app-navbar sticky-top dashboard-navbar" aria-label="Main navigation">
+    <div class="container app-navbar-container">
+      <a class="navbar-brand app-brand" href="/" aria-label="AI Campus Placement Agent home">
+        <span class="app-brand-mark" aria-hidden="true"><i class="fa-solid fa-graduation-cap"></i></span>
+        <span class="app-brand-name">AI Campus <span>Placement Agent</span></span>
       </a>
-      <div class="d-flex align-items-center flex-wrap gap-2 ms-auto ms-lg-0">
-        <button class="btn btn-outline-secondary btn-sm rounded-circle p-2 theme-toggle-btn" title="Toggle theme"
-          aria-label="Toggle theme">
-          <i class="fa-solid fa-moon"></i>
-        </button>
-        <!-- Motion Preference Selector (#task-reduced-motion) -->
-        <div class="dropdown d-inline-block">
-          <button class="btn btn-outline-secondary btn-sm rounded-pill px-2 py-1 motion-toggle-btn dropdown-toggle"
-            type="button" id="dashboardMotionPrefDropdown" data-bs-toggle="dropdown" aria-expanded="false"
-            title="Motion preferences: System, Reduced, or Standard" aria-label="Motion preference settings">
-            <i class="fa-solid fa-person-running me-1" id="motionNavIcon"></i>
-            <span class="small d-none d-md-inline" id="motionNavLabel">Motion</span>
+      <button class="navbar-toggler app-nav-toggle" type="button" data-bs-toggle="collapse"
+        data-bs-target="#dashboardNavigation" aria-controls="dashboardNavigation" aria-expanded="false"
+        aria-label="Toggle dashboard navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="dashboardNavigation">
+        <ul class="navbar-nav me-auto app-nav-links">
+          <li class="nav-item"><a href="/history" class="nav-link"><i class="fa-solid fa-clock-rotate-left me-1" aria-hidden="true"></i>History</a></li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="dashboardPreparationDropdown" role="button"
+              data-bs-toggle="dropdown" aria-expanded="false"><i class="fa-solid fa-book-open me-1" aria-hidden="true"></i>Prepare</a>
+            <ul class="dropdown-menu app-nav-menu" aria-labelledby="dashboardPreparationDropdown">
+              <li><a href="/role-preparation?analysis_id={{ analysis_id }}" class="dropdown-item"><i class="fa-solid fa-user-gear me-2" aria-hidden="true"></i>Role preparation</a></li>
+              <li><a href="{{ url_for('resume_templates_gallery') }}" class="dropdown-item"><i class="fa-solid fa-file-lines me-2" aria-hidden="true"></i>ATS resume templates</a></li>
+              <li><a href="{{ url_for('session_resume_compare_view') }}" class="dropdown-item" id="btnNavSessionCompare"><i class="fa-solid fa-code-compare me-2" aria-hidden="true"></i>Test a resume revision</a></li>
+            </ul>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="dashboardReportDropdown" role="button"
+              data-bs-toggle="dropdown" aria-expanded="false"><i class="fa-solid fa-file-arrow-down me-1" aria-hidden="true"></i>Report</a>
+            <ul class="dropdown-menu app-nav-menu" aria-labelledby="dashboardReportDropdown">
+              <li><a href="/download/{{ analysis_id }}" class="dropdown-item"><i class="fa-solid fa-file-pdf me-2" aria-hidden="true"></i>Download PDF</a></li>
+              <li><a href="/download/{{ analysis_id }}/markdown" class="dropdown-item" id="btnDownloadMarkdownNav" title="Download placement report as Markdown"><i class="fa-brands fa-markdown me-2" aria-hidden="true"></i>Download Markdown</a></li>
+              <li><a href="/download/{{ analysis_id }}/json" class="dropdown-item" id="btnDownloadJsonNav" title="Download placement report as JSON"><i class="fa-solid fa-code me-2" aria-hidden="true"></i>Download JSON</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a href="/leaderboard?analysis_id={{ analysis_id }}" class="dropdown-item" title="Campus Placement Leaderboard"><i class="fa-solid fa-trophy me-2" aria-hidden="true"></i>Leaderboard</a></li>
+              <li><a href="/certificate/{{ analysis_id }}" class="dropdown-item"><i class="fa-solid fa-award me-2" aria-hidden="true"></i>Certificate</a></li>
+              <li><button type="button" class="dropdown-item btn-print-report btn-print-page" id="btnPrintThisPage" onclick="window.print()" title="Print this page" aria-label="Print this page"><i class="fa-solid fa-print me-2" aria-hidden="true"></i>Print report</button></li>
+            </ul>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="dashboardShareDropdown" role="button"
+              data-bs-toggle="dropdown" aria-expanded="false"><i class="fa-solid fa-share-nodes me-1" aria-hidden="true"></i>Share</a>
+            <ul class="dropdown-menu app-nav-menu" aria-labelledby="dashboardShareDropdown">
+              <li><button type="button" class="dropdown-item" id="btnShareProfileModal" data-bs-toggle="modal" data-bs-target="#shareProfileModal"><i class="fa-solid fa-share-nodes me-2" aria-hidden="true"></i>Share analysis</button></li>
+              <li><button type="button" class="dropdown-item" id="btnShareMentorModal" data-bs-toggle="modal" data-bs-target="#shareMentorModal" title="Share read-only analysis link with mentor"><i class="fa-solid fa-user-tie me-2" aria-hidden="true"></i>Share with mentor</button></li>
+            </ul>
+          </li>
+        </ul>
+
+        <div class="d-flex align-items-center gap-2 app-nav-tools dashboard-nav-tools">
+          <a href="/" class="btn btn-primary btn-sm dashboard-new-analysis"><i class="fa-solid fa-plus me-1" aria-hidden="true"></i>New analysis</a>
+          {% if comparison is defined and comparison and comparison.has_previous %}
+          <a href="{{ url_for('compare_with_previous_analysis_view', analysis_id=analysis_id) }}"
+            class="btn btn-sm app-icon-button" id="btnNavComparePrevious" title="Compare with my previous analysis"
+            aria-label="Compare with previous analysis"><i class="fa-solid fa-code-compare" aria-hidden="true"></i></a>
+          {% endif %}
+          {% if is_demo or analysis.is_demo or analysis_id in ['demo-sample-analysis', 'demo_sample_analysis', 'demo'] or session.get('is_demo_mode') %}
+          <span class="badge bg-warning text-dark border rounded-pill px-2 py-2 small fw-semibold" id="navDemoBadge">
+            <i class="fa-solid fa-flask-vial me-1" aria-hidden="true"></i> Demo
+          </span>
+          <a href="{{ url_for('demo_mode_exit') }}" class="btn btn-sm app-icon-button" id="btnNavExitDemo"
+            title="Exit demo mode" aria-label="Exit demo mode"><i class="fa-solid fa-arrow-right-from-bracket" aria-hidden="true"></i></a>
+          {% endif %}
+          <button class="btn btn-sm app-icon-button theme-toggle-btn" type="button" title="Toggle theme" aria-label="Toggle theme mode">
+            <i class="fa-solid fa-moon" aria-hidden="true"></i>
           </button>
-          <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 motion-dropdown-menu" aria-labelledby="dashboardMotionPrefDropdown">
-            <li><h6 class="dropdown-header"><i class="fa-solid fa-sliders me-1"></i> Motion Preference</h6></li>
-            <li>
-              <button class="dropdown-item d-flex justify-content-between align-items-center motion-pref-item" type="button" data-motion-value="system">
-                <span><i class="fa-solid fa-desktop me-2 text-secondary"></i> System Default (Auto)</span>
-                <i class="fa-solid fa-check small text-primary d-none motion-check" data-for="system"></i>
-              </button>
-            </li>
-            <li>
-              <button class="dropdown-item d-flex justify-content-between align-items-center motion-pref-item" type="button" data-motion-value="reduce">
-                <span><i class="fa-solid fa-person-walking me-2 text-warning"></i> Reduced Motion</span>
-                <i class="fa-solid fa-check small text-primary d-none motion-check" data-for="reduce"></i>
-              </button>
-            </li>
-            <li>
-              <button class="dropdown-item d-flex justify-content-between align-items-center motion-pref-item" type="button" data-motion-value="allow">
-                <span><i class="fa-solid fa-person-running me-2 text-success"></i> Standard Motion</span>
-                <i class="fa-solid fa-check small text-primary d-none motion-check" data-for="allow"></i>
-              </button>
-            </li>
-            <li><hr class="dropdown-divider my-1"></li>
-            <li><span class="dropdown-item-text text-muted small py-1" style="font-size: 0.75rem;">Disables animations while keeping progress indicators visible.</span></li>
-          </ul>
+          <div class="dropdown">
+            <button class="btn btn-sm app-motion-button motion-toggle-btn dropdown-toggle" type="button"
+              id="dashboardMotionPrefDropdown" data-bs-toggle="dropdown" aria-expanded="false"
+              title="Motion preferences: System, Reduced, or Standard" aria-label="Motion preference settings">
+              <i class="fa-solid fa-person-running me-1" id="motionNavIcon" aria-hidden="true"></i>
+              <span id="motionNavLabel">Motion</span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm app-nav-menu motion-dropdown-menu"
+              aria-labelledby="dashboardMotionPrefDropdown">
+              <li><h6 class="dropdown-header"><i class="fa-solid fa-sliders me-1" aria-hidden="true"></i>Motion Preference</h6></li>
+              <li><button class="dropdown-item d-flex justify-content-between align-items-center motion-pref-item" type="button" data-motion-value="system"><span><i class="fa-solid fa-desktop me-2 text-secondary" aria-hidden="true"></i>System Default (Auto)</span><i class="fa-solid fa-check small text-primary d-none motion-check" data-for="system" aria-hidden="true"></i></button></li>
+              <li><button class="dropdown-item d-flex justify-content-between align-items-center motion-pref-item" type="button" data-motion-value="reduce"><span><i class="fa-solid fa-person-walking me-2 text-warning" aria-hidden="true"></i>Reduced Motion</span><i class="fa-solid fa-check small text-primary d-none motion-check" data-for="reduce" aria-hidden="true"></i></button></li>
+              <li><button class="dropdown-item d-flex justify-content-between align-items-center motion-pref-item" type="button" data-motion-value="allow"><span><i class="fa-solid fa-person-running me-2 text-success" aria-hidden="true"></i>Standard Motion</span><i class="fa-solid fa-check small text-primary d-none motion-check" data-for="allow" aria-hidden="true"></i></button></li>
+              <li><hr class="dropdown-divider my-1"></li>
+              <li><span class="dropdown-item-text text-muted small py-1">Disables animations while keeping progress indicators visible.</span></li>
+            </ul>
+          </div>
         </div>
-        <a href="/" class="btn btn-outline-secondary btn-sm rounded-pill px-2 px-sm-3">
-          <i class="fa-solid fa-arrow-left me-1"></i> <span class="d-none d-sm-inline">New</span> Analysis
-        </a>
-        <a href="/history" class="btn btn-outline-info btn-sm rounded-pill px-2 px-sm-3" title="Past Analysis History">
-          <i class="fa-solid fa-clock-rotate-left me-1"></i> History
-        </a>
-        <a href="/leaderboard?analysis_id={{ analysis_id }}"
-          class="btn btn-outline-warning btn-sm rounded-pill px-2 px-sm-3" title="Campus Placement Leaderboard">
-          <i class="fa-solid fa-trophy me-1"></i> Leaderboard
-        </a>
-        <a href="/certificate/{{ analysis_id }}" class="btn btn-outline-primary btn-sm rounded-pill px-2 px-sm-3">
-          <i class="fa-solid fa-award me-1"></i> Certificate
-        </a>
-        <a href="/role-preparation?analysis_id={{ analysis_id }}"
-          class="btn btn-outline-info btn-sm rounded-pill px-2 px-sm-3" title="Role-Based Preparation Mode">
-          <i class="fa-solid fa-user-gear me-1"></i> Role Prep
-        </a>
-        <button type="button"
-          class="btn btn-outline-secondary btn-sm rounded-pill px-2 px-sm-3 btn-print-report btn-print-page"
-          id="btnPrintThisPage" onclick="window.print()" title="Print this page" aria-label="Print this page">
-          <i class="fa-solid fa-print me-1"></i> <span class="d-none d-sm-inline">Print this page</span><span
-            class="d-sm-none">Print</span>
-        </button>
-        <button type="button" class="btn btn-outline-success btn-sm rounded-pill px-2 px-sm-3" id="btnShareProfileModal"
-          data-bs-toggle="modal" data-bs-target="#shareProfileModal">
-          <i class="fa-solid fa-share-nodes me-1"></i> Share
-        </button>
-        <button type="button" class="btn btn-outline-info btn-sm rounded-pill px-2 px-sm-3" id="btnShareMentorModal"
-          data-bs-toggle="modal" data-bs-target="#shareMentorModal" title="Share read-only analysis link with mentor">
-          <i class="fa-solid fa-user-tie me-1"></i> <span class="d-none d-sm-inline">Share with</span> Mentor
-        </button>
-        {% if comparison is defined and comparison and comparison.has_previous %}
-        <a href="{{ url_for('compare_with_previous_analysis_view', analysis_id=analysis_id) }}"
-          class="btn btn-outline-primary btn-sm rounded-pill px-2 px-sm-3" id="btnNavComparePrevious"
-          title="Compare with my previous analysis">
-          <i class="fa-solid fa-code-compare me-1"></i> <span class="d-none d-sm-inline">Compare with</span> Previous
-        </a>
-        {% endif %}
-        <a href="{{ url_for('session_resume_compare_view') }}"
-          class="btn btn-outline-success btn-sm rounded-pill px-2 px-sm-3" id="btnNavSessionCompare"
-          title="Test revised resume in this session">
-          <i class="fa-solid fa-code-compare me-1"></i> <span class="d-none d-sm-inline">Test</span> Revision
-        </a>
-        {% if is_demo or analysis.is_demo or analysis_id in ['demo-sample-analysis', 'demo_sample_analysis', 'demo'] or
-        session.get('is_demo_mode') %}
-        <span class="badge bg-warning text-dark border rounded-pill px-3 py-2 small fw-semibold" id="navDemoBadge">
-          <i class="fa-solid fa-flask-vial me-1"></i> Demo Mode
-        </span>
-        <a href="{{ url_for('demo_mode_exit') }}" class="btn btn-outline-secondary btn-sm rounded-pill px-2 px-sm-3"
-          id="btnNavExitDemo" title="Exit demo mode">
-          <i class="fa-solid fa-arrow-right-from-bracket me-1"></i> Exit Demo
-        </a>
-        {% endif %}
-        <a href="{{ url_for('resume_templates_gallery') }}"
-          class="btn btn-outline-secondary btn-sm rounded-pill px-2 px-sm-3"
-          title="Generate ATS-compliant single column resume">
-          <i class="fa-solid fa-file-lines me-1"></i> ATS Resume
-        </a>
-        <a href="/download/{{ analysis_id }}" class="btn btn-custom-primary btn-sm rounded-pill px-2 px-sm-3">
-          <i class="fa-solid fa-download me-1"></i> <span class="d-none d-sm-inline">Download</span> PDF
-        </a>
-        <a href="/download/{{ analysis_id }}/markdown" class="btn btn-outline-primary btn-sm rounded-pill px-2 px-sm-3"
-          id="btnDownloadMarkdownNav" title="Download placement report as Markdown">
-          <i class="fa-brands fa-markdown me-1"></i> <span class="d-none d-sm-inline">Download</span> Markdown
-        </a>
-        <a href="/download/{{ analysis_id }}/json" class="btn btn-outline-secondary btn-sm rounded-pill px-2 px-sm-3"
-          id="btnDownloadJsonNav" title="Download placement report as JSON">
-          <i class="fa-solid fa-code me-1"></i> <span class="d-none d-sm-inline">Download</span> JSON
-        </a>
       </div>
     </div>
   </nav>
 
   <!-- Dashboard Content -->
-  <main class="container py-5 fade-in" id="dashboardContainer" tabindex="-1" data-analysis-id="{{ analysis_id }}"
+  <main class="container dashboard-main py-4 fade-in" id="dashboardContainer" tabindex="-1" data-analysis-id="{{ analysis_id }}"
     data-company="{{ analysis.company_name }}" data-date="{{ analysis.created_at }}">
     {% set result = (analysis.results if (analysis is defined and analysis.results is mapping) else (analysis if (analysis is defined and analysis is mapping) else {})) %}
 
@@ -266,10 +237,63 @@
       <span id="aiRetryCooldownBadge" class="badge bg-primary ms-3"></span>
     </div>
 
+    {% set overview_resume = result.get('resume_analysis', {}) if result is mapping else {} %}
+    {% set overview_job_match = result.get('job_match', {}) if result is mapping else {} %}
+    {% set overview_skill_gaps = result.get('skill_gap') if result is mapping else none %}
+    <section class="dashboard-overview-header" aria-labelledby="dashboardPageTitle">
+      <div class="dashboard-overview-copy">
+        <span class="dashboard-eyebrow">Analysis report</span>
+        <h1 id="dashboardPageTitle">Placement analysis</h1>
+        <p>Results for <strong>{{ analysis.company_name }}</strong>
+          <span aria-hidden="true">&middot;</span> {{ analysis.resume_filename }}
+          <span aria-hidden="true">&middot;</span> {{ analysis.created_at | format_datetime_ist }}
+        </p>
+        <div class="dashboard-overview-actions">
+          <a href="{{ url_for('index') }}" class="btn btn-primary btn-sm">
+            <i class="fa-solid fa-plus me-1" aria-hidden="true"></i> New analysis
+          </a>
+          <a href="#placementReadinessSummaryCard" class="btn btn-outline-secondary btn-sm">
+            View readiness summary <i class="fa-solid fa-arrow-down ms-1" aria-hidden="true"></i>
+          </a>
+        </div>
+      </div>
+      <div class="dashboard-overview-metrics" aria-label="Analysis highlights">
+        {% if overview_resume is mapping and overview_resume.get('ats_score') is not none %}
+        <div class="dashboard-overview-metric">
+          <span>ATS score</span>
+          <strong>{{ overview_resume.get('ats_score')|int }}<small>/100</small></strong>
+        </div>
+        {% endif %}
+        {% if overview_job_match is mapping and overview_job_match.get('match_percentage') is not none %}
+        <div class="dashboard-overview-metric">
+          <span>Role match</span>
+          <strong>{{ overview_job_match.get('match_percentage')|int }}<small>%</small></strong>
+        </div>
+        {% endif %}
+        {% if overview_skill_gaps is not none and overview_skill_gaps is iterable and overview_skill_gaps is not string %}
+        <div class="dashboard-overview-metric">
+          <span>Skill gaps</span>
+          <strong>{{ overview_skill_gaps|length }}</strong>
+        </div>
+        {% endif %}
+      </div>
+    </section>
+
+    <section class="dashboard-detail-group mb-4" aria-label="Detailed analysis sections">
+      <button class="btn dashboard-detail-toggle collapsed" type="button" data-bs-toggle="collapse"
+        data-bs-target="#dashboardSectionDetails" aria-expanded="false" aria-controls="dashboardSectionDetails">
+        <span class="dashboard-detail-toggle-icon" aria-hidden="true"><i class="fa-solid fa-list-check"></i></span>
+        <span class="dashboard-detail-toggle-copy">
+          <strong>Detailed section outputs</strong>
+          <small>Skill gaps, preparation roadmap, and interview questions</small>
+        </span>
+        <i class="fa-solid fa-chevron-down dashboard-detail-chevron" aria-hidden="true"></i>
+      </button>
+      <div class="collapse" id="dashboardSectionDetails">
     <!-- Example 1: Skill Gap Remediation Section -->
     <div class="card mb-4" id="section-card-skill_gaps" data-analysis-id="{{ analysis.id }}">
       <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">Skill Gap Remediation Matrix</h5>
+        <h2 class="h5 mb-0">Skill Gap Remediation Matrix</h2>
         {% if not result.skill_gaps or (result.failed_sections and 'skill_gaps' in result.failed_sections) %}
         <span class="badge bg-warning text-dark">Section Incomplete</span>
         {% endif %}
@@ -331,7 +355,7 @@
     <!-- Example 2: 6-Week Study Roadmap Section -->
     <div class="card mb-4" id="section-card-roadmap" data-analysis-id="{{ analysis.id }}">
       <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">Personalized 6-Week Study Roadmap</h5>
+        <h2 class="h5 mb-0">Personalized 6-Week Study Roadmap</h2>
         {% if not result.learning_roadmap or (result.failed_sections and 'roadmap' in result.failed_sections) %}
         <span class="badge bg-warning text-dark">Section Incomplete</span>
         {% endif %}
@@ -387,7 +411,7 @@
     <!-- Example 3: Tailored Interview Questions Section -->
     <div class="card mb-4" id="section-card-interview_questions" data-analysis-id="{{ analysis.id }}">
       <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">Tailored Interview Questions</h5>
+        <h2 class="h5 mb-0">Tailored Interview Questions</h2>
         {% if not result.interview_questions or (result.failed_sections and 'interview_questions' in
         result.failed_sections) %}
         <span class="badge bg-warning text-dark">Section Incomplete</span>
@@ -430,6 +454,8 @@
         {% endif %}
       </div>
     </div>
+      </div>
+    </section>
     <!-- Cached Analysis Banner (#296) -->
     {% if is_cached %}
     <div

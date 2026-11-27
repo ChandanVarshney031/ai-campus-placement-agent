@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Email Template Preview &amp; Inspector &mdash; AI Campus Placement Agent</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <style>
+    body { background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    .email-frame { width: 100%; height: 680px; border: 1px solid #e2e8f0; border-radius: 8px; background: #ffffff; }
+    .plain-text-box { background: #0f172a; color: #f8fafc; font-family: "Courier New", Courier, monospace; font-size: 13px; line-height: 1.5; padding: 20px; border-radius: 8px; max-height: 680px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
+    .badge-dev { background-color: #fef3c7; color: #92400e; border: 1px solid #fde68a; font-weight: 600; }
+  </style>
+</head>
+<body class="py-4">
+  <div class="container-fluid px-4 max-w-7xl">
+    <!-- Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-3 border-bottom">
+      <div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+          <h3 class="fw-bold mb-0 text-dark">
+            <i class="bi bi-envelope-check-fill text-primary me-2"></i>Email Template Preview &amp; Inspector
+          </h3>
+          <span class="badge badge-dev px-2 py-1 rounded-pill">Development Only</span>
+        </div>
+        <p class="text-muted mb-0 small">
+          Inspect responsive HTML rendering and plain-text alternatives for all placement platform transactional emails (#889).
+        </p>
+      </div>
+      <div class="d-flex gap-2 align-items-center mt-2 mt-md-0">
+        <a href="?type={{ current_type }}&part=html" target="_blank" class="btn btn-outline-secondary btn-sm">
+          <i class="bi bi-box-arrow-up-right me-1"></i> Raw HTML
+        </a>
+        <a href="?type={{ current_type }}&part=text" target="_blank" class="btn btn-outline-secondary btn-sm">
+          <i class="bi bi-file-text me-1"></i> Raw Plain Text
+        </a>
+        <a href="?type={{ current_type }}&part=json" target="_blank" class="btn btn-outline-secondary btn-sm">
+          <i class="bi bi-code-slash me-1"></i> JSON Payload
+        </a>
+      </div>
+    </div>
+
+    <!-- Email Type Selector Pills -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4 p-3 bg-white">
+      <div class="d-flex flex-wrap gap-2 align-items-center">
+        <span class="fw-bold text-secondary me-2 small"><i class="bi bi-collection me-1"></i>Email Type:</span>
+        {% for et in supported_types %}
+        <a href="?type={{ et }}" class="btn btn-sm {{ 'btn-primary text-white fw-bold shadow-sm' if et == current_type else 'btn-outline-secondary' }} rounded-pill px-3">
+          {{ et | replace('_', ' ') | title }}
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Active Email Details Banner -->
+    <div class="card border-0 shadow-sm rounded-3 mb-4 p-3 bg-white">
+      <div class="row align-items-center g-3">
+        <div class="col-md-8">
+          <small class="text-muted d-block text-uppercase fw-semibold" style="font-size: 11px;">Subject Line</small>
+          <div class="fs-6 fw-bold text-dark font-monospace">{{ email_data.subject }}</div>
+        </div>
+        <div class="col-md-4 text-md-end">
+          <span class="badge bg-light text-dark border px-3 py-2 rounded-3">
+            <i class="bi bi-tag-fill text-primary me-1"></i>Type: <code>{{ current_type }}</code>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dual Tab Inspector -->
+    <div class="card border-0 shadow-sm rounded-3 overflow-hidden bg-white">
+      <div class="card-header bg-white border-bottom pt-3 pb-0">
+        <ul class="nav nav-tabs border-0" id="previewTabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active fw-semibold" id="html-tab" data-bs-toggle="tab" data-bs-target="#html-pane" type="button" role="tab">
+              <i class="bi bi-filetype-html me-1 text-danger"></i> Responsive HTML Preview
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link fw-semibold" id="text-tab" data-bs-toggle="tab" data-bs-target="#text-pane" type="button" role="tab">
+              <i class="bi bi-file-text me-1 text-primary"></i> Plain-Text Alternative Part
+            </button>
+          </li>
+        </ul>
+      </div>
+
+      <div class="card-body p-4 tab-content" id="previewTabContent">
+        <!-- HTML Preview Tab -->
+        <div class="tab-pane fade show active" id="html-pane" role="tabpanel">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <small class="text-muted"><i class="bi bi-phone me-1"></i> Rendered in isolated frame with inline CSS styling</small>
+            <small class="text-muted">Target Width: <strong>600px Max</strong></small>
+          </div>
+          <iframe class="email-frame" src="?type={{ current_type }}&part=html" title="HTML Email Preview"></iframe>
+        </div>
+
+        <!-- Plain Text Tab -->
+        <div class="tab-pane fade" id="text-pane" role="tabpanel">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <small class="text-muted"><i class="bi bi-terminal me-1"></i> Formatted plain-text alternative sent with MIMEMultipart alternative</small>
+            <span class="badge bg-secondary">MIME type: text/plain</span>
+          </div>
+          <pre class="plain-text-box">{{ email_data.plain_text }}</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

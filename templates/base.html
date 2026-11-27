@@ -34,84 +34,104 @@
     })();
   </script>
 </head>
-<body class="bg-light">
-  <!-- Top Navigation Bar -->
-  <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom py-2" aria-label="Main navigation">
-    <div class="container">
-      <a class="navbar-brand text-primary fw-bold" href="/">
-        <i class="fa-solid fa-graduation-cap me-1"></i> AI Campus Placement
+<body class="app-body">
+  <nav class="navbar navbar-expand-lg app-navbar sticky-top" aria-label="Main navigation">
+    <div class="container app-navbar-container">
+      <a class="navbar-brand app-brand" href="/" aria-label="AI Campus Placement Agent home">
+        <span class="app-brand-mark" aria-hidden="true"><i class="fa-solid fa-graduation-cap"></i></span>
+        <span class="app-brand-name">AI Campus <span>Placement Agent</span></span>
       </a>
-      <div class="ms-auto d-flex gap-2 align-items-center flex-wrap">
-        <a href="/" class="btn btn-sm btn-outline-secondary">Home</a>
-        <a href="/interview/question-bank" class="btn btn-sm btn-outline-primary" title="Searchable Common Interview Question Bank"><i class="fa-solid fa-layer-group me-1"></i>Questions</a>
-        <a href="/aptitude" class="btn btn-sm btn-outline-primary"><i class="fa-solid fa-stopwatch me-1"></i>Aptitude</a>
-        <a href="/group-discussion" class="btn btn-sm btn-outline-primary"><i class="fa-solid fa-users-rectangle me-1"></i>GD Practice</a>
-        <a href="/companies" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-building me-1"></i>Companies</a>
-        <a href="/history" class="btn btn-sm btn-outline-secondary">History</a>
-        <a href="/resumes" class="btn btn-sm btn-outline-info" title="My Resumes Library (up to 5)"><i class="fa-solid fa-folder-open me-1"></i>My Resumes</a>
-        <a href="/stories" class="btn btn-sm btn-outline-warning" title="My STAR Behavioural Stories Bank"><i class="fa-solid fa-star me-1"></i>My Stories</a>
-        <a href="/search" class="btn btn-sm btn-outline-primary"><i class="fas fa-search me-1"></i>Search</a>
-        <!-- Motion Preference Dropdown (#task-reduced-motion) -->
-        <div class="dropdown d-inline-block">
-          <button class="btn btn-sm btn-outline-secondary rounded-pill px-2 py-1 motion-toggle-btn dropdown-toggle"
-            type="button" id="baseMotionPrefDropdown" data-bs-toggle="dropdown" aria-expanded="false"
-            title="Motion preferences: System, Reduced, or Standard" aria-label="Motion preference settings">
-            <i class="fa-solid fa-person-running me-1" id="motionNavIcon"></i>
-            <span class="small d-none d-md-inline" id="motionNavLabel">Motion</span>
+      <button class="navbar-toggler app-nav-toggle" type="button" data-bs-toggle="collapse"
+        data-bs-target="#appNavigation" aria-controls="appNavigation" aria-expanded="false"
+        aria-label="Toggle main navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="appNavigation">
+        <ul class="navbar-nav me-auto app-nav-links">
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="workspaceNavDropdown" role="button"
+              data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="fa-solid fa-grid-2 me-1" aria-hidden="true"></i> Workspace
+            </a>
+            <ul class="dropdown-menu app-nav-menu" aria-labelledby="workspaceNavDropdown">
+              <li><a href="/" class="dropdown-item{% if request.path == '/' %} active{% endif %}"{% if request.path == '/' %} aria-current="page"{% endif %}><i class="fa-solid fa-house me-2" aria-hidden="true"></i>Home</a></li>
+              <li><a href="/history" class="dropdown-item{% if request.path.startswith('/history') %} active{% endif %}"{% if request.path.startswith('/history') %} aria-current="page"{% endif %}><i class="fa-solid fa-clock-rotate-left me-2" aria-hidden="true"></i>Analysis history</a></li>
+              <li><a href="/resumes" class="dropdown-item{% if request.path.startswith('/resumes') %} active{% endif %}"{% if request.path.startswith('/resumes') %} aria-current="page"{% endif %} title="My Resumes Library (up to 5)"><i class="fa-solid fa-folder-open me-2" aria-hidden="true"></i>Resume library</a></li>
+              <li><a href="/search" class="dropdown-item{% if request.path.startswith('/search') %} active{% endif %}"{% if request.path.startswith('/search') %} aria-current="page"{% endif %}><i class="fa-solid fa-magnifying-glass me-2" aria-hidden="true"></i>Search</a></li>
+            </ul>
+          </li>
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="preparationNavDropdown" role="button"
+              data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="fa-solid fa-book-open me-1" aria-hidden="true"></i> Preparation
+            </a>
+            <ul class="dropdown-menu app-nav-menu" aria-labelledby="preparationNavDropdown">
+              <li><a href="/interview/question-bank" class="dropdown-item{% if request.path.startswith('/interview/question-bank') or request.path == '/question-bank' %} active{% endif %}"{% if request.path.startswith('/interview/question-bank') or request.path == '/question-bank' %} aria-current="page"{% endif %} title="Searchable Common Interview Question Bank"><i class="fa-solid fa-layer-group me-2" aria-hidden="true"></i>Question bank</a></li>
+              <li><a href="/aptitude" class="dropdown-item{% if request.path.startswith('/aptitude') %} active{% endif %}"{% if request.path.startswith('/aptitude') %} aria-current="page"{% endif %}><i class="fa-solid fa-stopwatch me-2" aria-hidden="true"></i>Aptitude practice</a></li>
+              <li><a href="/group-discussion" class="dropdown-item{% if request.path.startswith('/group-discussion') %} active{% endif %}"{% if request.path.startswith('/group-discussion') %} aria-current="page"{% endif %}><i class="fa-solid fa-users-rectangle me-2" aria-hidden="true"></i>Group discussion</a></li>
+              <li><a href="/stories" class="dropdown-item{% if request.path.startswith('/stories') %} active{% endif %}"{% if request.path.startswith('/stories') %} aria-current="page"{% endif %} title="My STAR Behavioural Stories Bank"><i class="fa-solid fa-star me-2" aria-hidden="true"></i>My stories</a></li>
+            </ul>
+          </li>
+          <li class="nav-item">
+            <a href="/companies" class="nav-link{% if request.path.startswith('/companies') %} active{% endif %}"{% if request.path.startswith('/companies') %} aria-current="page"{% endif %}><i class="fa-regular fa-building me-1" aria-hidden="true"></i> Companies</a>
+          </li>
+          <li class="nav-item">
+            <a href="/applications" class="nav-link{% if request.path.startswith('/applications') or request.path.startswith('/tracker') %} active{% endif %}"{% if request.path.startswith('/applications') or request.path.startswith('/tracker') %} aria-current="page"{% endif %}><i class="fa-solid fa-briefcase me-1" aria-hidden="true"></i> Applications</a>
+          </li>
+        </ul>
+
+        <div class="d-flex align-items-center gap-2 app-nav-tools">
+          <button class="btn btn-sm app-icon-button theme-toggle-btn" type="button"
+            title="Toggle theme" aria-label="Toggle theme mode">
+            <i class="fa-solid fa-moon" aria-hidden="true"></i>
           </button>
-          <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 motion-dropdown-menu" aria-labelledby="baseMotionPrefDropdown">
-            <li><h6 class="dropdown-header"><i class="fa-solid fa-sliders me-1"></i> Motion Preference</h6></li>
-            <li>
-              <button class="dropdown-item d-flex justify-content-between align-items-center motion-pref-item" type="button" data-motion-value="system">
-                <span><i class="fa-solid fa-desktop me-2 text-secondary"></i> System Default (Auto)</span>
-                <i class="fa-solid fa-check small text-primary d-none motion-check" data-for="system"></i>
-              </button>
-            </li>
-            <li>
-              <button class="dropdown-item d-flex justify-content-between align-items-center motion-pref-item" type="button" data-motion-value="reduce">
-                <span><i class="fa-solid fa-person-walking me-2 text-warning"></i> Reduced Motion</span>
-                <i class="fa-solid fa-check small text-primary d-none motion-check" data-for="reduce"></i>
-              </button>
-            </li>
-            <li>
-              <button class="dropdown-item d-flex justify-content-between align-items-center motion-pref-item" type="button" data-motion-value="allow">
-                <span><i class="fa-solid fa-person-running me-2 text-success"></i> Standard Motion</span>
-                <i class="fa-solid fa-check small text-primary d-none motion-check" data-for="allow"></i>
-              </button>
-            </li>
-            <li><hr class="dropdown-divider my-1"></li>
-            <li><span class="dropdown-item-text text-muted small py-1" style="font-size: 0.75rem;">Disables animations while keeping progress indicators visible.</span></li>
-          </ul>
+          <div class="dropdown">
+            <button class="btn btn-sm app-motion-button motion-toggle-btn dropdown-toggle"
+              type="button" id="baseMotionPrefDropdown" data-bs-toggle="dropdown" aria-expanded="false"
+              title="Motion preferences: System, Reduced, or Standard" aria-label="Motion preference settings">
+              <i class="fa-solid fa-person-running me-1" id="motionNavIcon" aria-hidden="true"></i>
+              <span id="motionNavLabel">Motion</span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm app-nav-menu motion-dropdown-menu" aria-labelledby="baseMotionPrefDropdown">
+              <li><h6 class="dropdown-header"><i class="fa-solid fa-sliders me-1" aria-hidden="true"></i> Motion Preference</h6></li>
+              <li><button class="dropdown-item d-flex justify-content-between align-items-center motion-pref-item" type="button" data-motion-value="system"><span><i class="fa-solid fa-desktop me-2 text-secondary" aria-hidden="true"></i> System Default (Auto)</span><i class="fa-solid fa-check small text-primary d-none motion-check" data-for="system" aria-hidden="true"></i></button></li>
+              <li><button class="dropdown-item d-flex justify-content-between align-items-center motion-pref-item" type="button" data-motion-value="reduce"><span><i class="fa-solid fa-person-walking me-2 text-warning" aria-hidden="true"></i> Reduced Motion</span><i class="fa-solid fa-check small text-primary d-none motion-check" data-for="reduce" aria-hidden="true"></i></button></li>
+              <li><button class="dropdown-item d-flex justify-content-between align-items-center motion-pref-item" type="button" data-motion-value="allow"><span><i class="fa-solid fa-person-running me-2 text-success" aria-hidden="true"></i> Standard Motion</span><i class="fa-solid fa-check small text-primary d-none motion-check" data-for="allow" aria-hidden="true"></i></button></li>
+              <li><hr class="dropdown-divider my-1"></li>
+              <li><span class="dropdown-item-text text-muted small py-1">Disables animations while keeping progress indicators visible.</span></li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>
   </nav>
 
   <!-- Main Content Container -->
-  <main class="py-3 mb-5 mb-lg-0">
+  <main class="app-main py-4 mb-5 mb-lg-0">
     {% block content %}{% endblock %}
   </main>
 
   <!-- Mobile Bottom Navigation Bar (#635) -->
-  <nav class="d-lg-none fixed-bottom bg-white border-top shadow-lg py-2 px-1 z-3" aria-label="Mobile Navigation">
-    <div class="d-flex justify-content-around text-center">
-      <a href="/" class="text-decoration-none text-secondary d-flex flex-column align-items-center" style="font-size: 0.75rem;">
+  <nav class="d-lg-none fixed-bottom app-mobile-nav" aria-label="Mobile Navigation">
+    <div class="app-mobile-nav-inner">
+      <a href="/" class="app-mobile-nav-link{% if request.path == '/' %} active{% endif %}"{% if request.path == '/' %} aria-current="page"{% endif %}>
         <i class="fa-solid fa-house mb-1" style="font-size: 1.1rem;"></i>
         <span>Home</span>
       </a>
-      <a href="/aptitude" class="text-decoration-none text-secondary d-flex flex-column align-items-center" style="font-size: 0.75rem;">
+      <a href="/aptitude" class="app-mobile-nav-link{% if request.path.startswith('/aptitude') %} active{% endif %}"{% if request.path.startswith('/aptitude') %} aria-current="page"{% endif %}>
         <i class="fa-solid fa-code mb-1" style="font-size: 1.1rem;"></i>
         <span>Practice</span>
       </a>
-      <a href="/applications" class="text-decoration-none text-secondary d-flex flex-column align-items-center" style="font-size: 0.75rem;">
+      <a href="/applications" class="app-mobile-nav-link{% if request.path.startswith('/applications') or request.path.startswith('/tracker') %} active{% endif %}"{% if request.path.startswith('/applications') or request.path.startswith('/tracker') %} aria-current="page"{% endif %}>
         <i class="fa-solid fa-briefcase mb-1" style="font-size: 1.1rem;"></i>
         <span>Tracker</span>
       </a>
-      <a href="/companies" class="text-decoration-none text-secondary d-flex flex-column align-items-center" style="font-size: 0.75rem;">
+      <a href="/companies" class="app-mobile-nav-link{% if request.path.startswith('/companies') %} active{% endif %}"{% if request.path.startswith('/companies') %} aria-current="page"{% endif %}>
         <i class="fa-solid fa-building mb-1" style="font-size: 1.1rem;"></i>
         <span>Companies</span>
       </a>
-      <a href="/profile" class="text-decoration-none text-secondary d-flex flex-column align-items-center" style="font-size: 0.75rem;">
+      <a href="/profile" class="app-mobile-nav-link{% if request.path.startswith('/profile') %} active{% endif %}"{% if request.path.startswith('/profile') %} aria-current="page"{% endif %}>
         <i class="fa-solid fa-user mb-1" style="font-size: 1.1rem;"></i>
         <span>Profile</span>
       </a>

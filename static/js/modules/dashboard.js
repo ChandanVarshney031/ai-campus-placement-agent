@@ -8,6 +8,7 @@
 
 import { escapeHtml, showToast, getCsrfToken, copyToClipboard } from "./utils.js";
 import { OKABE_ITO, createAccessiblePattern, getChartThemeTokens } from "./chart_palette.js";
+import { isReducedMotion } from "./motion.js";
 
 export function initSkillGapFilter() {
   const searchInput = document.getElementById("skillSearchInput");

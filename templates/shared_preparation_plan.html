@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow, noarchive">
+  <title>{{ plan.plan_title }} (Mentor Read-Only View) - AI Campus Placement Agent</title>
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
+  <!-- FontAwesome Icons -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" integrity="sha384-iw3OoTErCYJJB9mCa8LNS2hbsQ7M3C0EpIsO/H5+EGAkPGc6rk+V8i04oW/K5xq0" crossorigin="anonymous">
+  <!-- Custom CSS -->
+  <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+  <style>
+    .mentor-header-banner {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      color: #ffffff;
+      border-radius: 1rem;
+    }
+    .goal-card {
+      border-radius: 0.85rem;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      background-color: #ffffff;
+      transition: all 0.2s ease;
+    }
+    .goal-card:hover {
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.07);
+      transform: translateY(-2px);
+    }
+    .stat-pill-card {
+      border-radius: 0.75rem;
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      background: #ffffff;
+    }
+    .privacy-callout {
+      border-left: 4px solid #10b981;
+      background-color: #f0fdf4;
+    }
+    .mentor-badge {
+      font-size: 0.78rem;
+      letter-spacing: 0.03em;
+    }
+    .progress-thin {
+      height: 8px;
+      border-radius: 4px;
+    }
+  </style>
+  <script>
+    (function () {
+      try {
+        var pref = localStorage.getItem("placement_motion_pref") || "system";
+        var sys = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        var isRed = pref === "reduce" || (pref === "system" && sys);
+        document.documentElement.setAttribute("data-motion-pref", pref);
+        document.documentElement.setAttribute("data-reduced-motion", isRed ? "true" : "false");
+        if (isRed) {
+          document.documentElement.classList.add("reduced-motion");
+        }
+      } catch (e) {}
+    })();
+  </script>
+</head>
+
+<body class="bg-light">
+  <!-- Accessibility Skip Link -->
+  <a href="#mainMentorContent" class="skip-link">Skip to preparation plan</a>
+
+  <!-- Simple Navigation Bar -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom py-2 py-md-3">
+    <div class="container d-flex flex-wrap align-items-center justify-content-between gap-2">
+      <div class="d-flex align-items-center gap-2">
+        <span class="navbar-brand fs-5 fw-bold text-dark mb-0">
+          <i class="fa-solid fa-graduation-cap text-primary me-2"></i> AI Campus <span class="fw-normal">Placement Agent</span>
+        </span>
+        <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1 mentor-badge">
+          <i class="fa-solid fa-user-tie me-1"></i> Mentor Read-Only View
+        </span>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-3" onclick="window.print()" title="Print Preparation Plan">
+          <i class="fa-solid fa-print me-1"></i> Print Plan
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Container -->
+  <main class="container py-4" id="mainMentorContent">
+    <!-- Mentor Header Banner -->
+    <div class="mentor-header-banner p-4 p-md-5 mb-4 shadow-sm">
+      <div class="row align-items-center gy-3">
+        <div class="col-lg-8">
+          <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+            <span class="badge bg-info text-dark rounded-pill px-3 py-1 fw-bold">
+              <i class="fa-solid fa-bullseye me-1"></i> Preparation Roadmap
+            </span>
+            {% if plan.mentor_name %}
+            <span class="badge bg-secondary rounded-pill px-3 py-1">
+              For Mentor: {{ plan.mentor_name }}
+            </span>
+            {% endif %}
+            <span class="text-light-50 small" style="opacity: 0.85;">
+              <i class="fa-solid fa-eye me-1"></i> {{ plan.view_count }} views
+            </span>
+          </div>
+          <h1 class="h2 fw-bold text-white mb-2">{{ plan.plan_title }}</h1>
+          <p class="text-white-50 mb-0 small" style="max-width: 650px;">
+            This read-only roadmap displays the student's selected placement goals, algorithmic practice targets, and interview milestones.
+          </p>
+        </div>
+        <div class="col-lg-4 text-lg-end">
+          <div class="p-3 bg-white bg-opacity-10 rounded-3 text-start text-lg-end">
+            <div class="text-white-50 small mb-1">Link Expiration</div>
+            <div class="fw-bold text-white" style="font-size: 0.95rem;">
+              <i class="fa-regular fa-clock me-1 text-warning"></i> {{ plan.expires_at[:10] }}
+            </div>
+            <div class="text-white-50 small mt-1" style="font-size: 0.75rem;">
+              Auto-expires after scheduled window
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Privacy Shield Banner -->
+    <div class="alert privacy-callout shadow-sm rounded-3 p-3 mb-4 d-flex align-items-center gap-3">
+      <div class="p-2 bg-success text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+        <i class="fa-solid fa-shield-halved"></i>
+      </div>
+      <div>
+        <h2 class="h6 fw-bold text-success mb-1">Privacy-Preserving Mentor Sharing</h2>
+        <p class="text-muted small mb-0">
+          Personal candidate study notes and private job application details (companies applied to, offer terms, and private notes) are strictly hidden from this shared view to protect student confidentiality.
+        </p>
+      </div>
+    </div>
+
+    <!-- Overview Stats Row -->
+    {% set summary = plan.summary %}
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-md-3">
+        <div class="card stat-pill-card p-3 shadow-sm h-100">
+          <span class="text-muted small text-uppercase fw-semibold">Selected Goals</span>
+          <h3 class="h3 fw-bold text-primary mb-0 mt-1">{{ summary.total_goals }}</h3>
+          <div class="text-muted small mt-1">
+            <span class="text-success fw-semibold">{{ summary.active_goals }} active</span> · {{ summary.completed_goals }} completed
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="card stat-pill-card p-3 shadow-sm h-100">
+          <span class="text-muted small text-uppercase fw-semibold">Average Progress</span>
+          <h3 class="h3 fw-bold text-success mb-0 mt-1">{{ summary.avg_progress_percent }}%</h3>
+          <div class="progress progress-thin bg-light mt-2">
+            <div class="progress-bar bg-success" role="progressbar" style="width: {{ summary.avg_progress_percent }}%;" aria-valuenow="{{ summary.avg_progress_percent }}" aria-valuemin="0" aria-valuemax="100"></div>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="card stat-pill-card p-3 shadow-sm h-100">
+          <span class="text-muted small text-uppercase fw-semibold">Daily Prep Streak</span>
+          <h3 class="h3 fw-bold text-warning mb-0 mt-1">{{ summary.streak_days }} <span class="fs-6 fw-normal text-muted">days</span></h3>
+          <div class="text-muted small mt-1">
+            <i class="fa-solid fa-fire text-danger me-1"></i> Consistent preparation
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="card stat-pill-card p-3 shadow-sm h-100">
+          <span class="text-muted small text-uppercase fw-semibold">Target Roles</span>
+          <div class="mt-2 d-flex flex-wrap gap-1">
+            {% for role in summary.target_roles %}
+            <span class="badge bg-secondary-subtle text-secondary border rounded-pill px-2 py-1 small">
+              {{ role }}
+            </span>
+            {% else %}
+            <span class="text-muted small">Software Engineering</span>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section Heading -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h2 class="h5 fw-bold text-dark mb-0">
+        <i class="fa-solid fa-list-check text-primary me-2"></i> Selected Preparation Goals & Progress
+      </h2>
+      <span class="text-muted small">{{ plan.goals|length }} goals shared</span>
+    </div>
+
+    <!-- Goals Cards -->
+    {% if plan.goals and plan.goals|length > 0 %}
+    <div class="row g-3 mb-4">
+      {% for g in plan.goals %}
+      {% set p = g.progress_metrics %}
+      <div class="col-lg-6">
+        <div class="card goal-card p-4 h-100 shadow-sm">
+          <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+            <div>
+              <div class="d-flex flex-wrap align-items-center gap-1 mb-1">
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-1" style="font-size: 0.75rem;">
+                  <i class="fa-solid fa-briefcase me-1"></i> {{ g.target_role }}
+                </span>
+                {% if g.status == 'COMPLETED' %}
+                <span class="badge bg-success text-white rounded-pill px-2 py-1" style="font-size: 0.75rem;">
+                  <i class="fa-solid fa-check me-1"></i> Completed
+                </span>
+                {% else %}
+                <span class="badge bg-light text-secondary border rounded-pill px-2 py-1" style="font-size: 0.75rem;">
+                  {{ g.status }}
+                </span>
+                {% endif %}
+              </div>
+              <h3 class="h5 fw-bold text-dark mb-1">{{ g.goal_title }}</h3>
+            </div>
+            <div class="text-end">
+              <span class="badge {% if p.days_remaining < 0 %}bg-danger{% elif p.days_remaining <= 7 %}bg-warning text-dark{% else %}bg-info text-dark{% endif %} rounded-pill px-3 py-1">
+                {% if p.days_remaining < 0 %}
+                Expired
+                {% elif p.days_remaining == 0 %}
+                Due Today
+                {% else %}
+                {{ p.days_remaining }} days left
+                {% endif %}
+              </span>
+              <div class="text-muted small mt-1" style="font-size: 0.75rem;">Target: {{ g.target_date }}</div>
+            </div>
+          </div>
+
+          <!-- Pace Advice Callout -->
+          <div class="p-2 bg-light rounded-2 mb-3 small d-flex align-items-center gap-2">
+            <i class="fa-solid fa-compass text-primary"></i>
+            <span class="text-secondary">{{ p.daily_pace_advice }}</span>
+          </div>
+
+          <!-- Overall Goal Progress Bar -->
+          <div class="mb-3">
+            <div class="d-flex justify-content-between small fw-semibold mb-1">
+              <span class="text-muted">Goal Completion</span>
+              <span class="text-primary">{{ p.overall_progress_percent }}%</span>
+            </div>
+            <div class="progress progress-thin bg-light">
+              <div class="progress-bar bg-primary" role="progressbar" style="width: {{ p.overall_progress_percent }}%;" aria-valuenow="{{ p.overall_progress_percent }}" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+          </div>
+
+          <!-- Metric Breakdown Grid -->
+          <div class="row g-2 pt-2 border-top">
+            <!-- Coding Problems -->
+            <div class="col-4 text-center border-end">
+              <div class="text-muted small" style="font-size: 0.72rem;">Coding Problems</div>
+              <div class="fw-bold text-dark mt-1">{{ p.coding_progress.completed }} / {{ p.coding_progress.target }}</div>
+              <div class="text-success small" style="font-size: 0.7rem;">{{ p.coding_progress.percent }}%</div>
+            </div>
+            <!-- Mock Interviews -->
+            <div class="col-4 text-center border-end">
+              <div class="text-muted small" style="font-size: 0.72rem;">Mock Interviews</div>
+              <div class="fw-bold text-dark mt-1">{{ p.interview_progress.completed }} / {{ p.interview_progress.target }}</div>
+              <div class="text-info small" style="font-size: 0.7rem;">{{ p.interview_progress.percent }}%</div>
+            </div>
+            <!-- Resume Status -->
+            <div class="col-4 text-center">
+              <div class="text-muted small" style="font-size: 0.72rem;">Resume Polish</div>
+              <div class="fw-bold mt-1">
+                {% if p.resume_ready %}
+                <span class="text-success"><i class="fa-solid fa-check-circle"></i> Ready</span>
+                {% else %}
+                <span class="text-secondary"><i class="fa-regular fa-clock"></i> In Progress</span>
+                {% endif %}
+              </div>
+              <div class="text-muted small" style="font-size: 0.7rem;">Targeted ATS</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="card p-5 text-center bg-white shadow-sm mb-4">
+      <i class="fa-solid fa-calendar-xmark fa-3x text-muted mb-3"></i>
+      <h3 class="h5 fw-bold">No Active Goals Shared</h3>
+      <p class="text-muted small mb-0">The candidate has not selected any specific preparation goals for this link.</p>
+    </div>
+    {% endif %}
+
+    <!-- Guidance for Mentors & Advisors -->
+    <div class="card bg-white border-0 shadow-sm p-4 mb-4">
+      <h3 class="h6 fw-bold text-dark mb-2">
+        <i class="fa-solid fa-lightbulb text-warning me-2"></i> Faculty & Mentor Coaching Guidelines
+      </h3>
+      <ul class="text-secondary small mb-0 ps-3">
+        <li class="mb-1"><strong>Review Pace Health:</strong> Check whether remaining days accommodate the daily coding problem pace without overloading the candidate's academic schedule.</li>
+        <li class="mb-1"><strong>Schedule Mock Debriefs:</strong> Recommend scheduling mock behavioral and technical sessions once the candidate completes at least 50% of targeted practice.</li>
+        <li><strong>Resume Feedback:</strong> Validate that the resume bullet points reflect measurable impact before the target date arrives.</li>
+      </ul>
+    </div>
+  </main>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
+</body>
+
+</html>

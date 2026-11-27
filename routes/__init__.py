@@ -97,6 +97,7 @@ from .jobs import jobs_bp
 from .reports import reports_bp
 from .admin import admin_bp
 from .api import api_bp
+from .email_preview import email_preview_bp
 
 logger = logging.getLogger(__name__)
 
@@ -154,6 +155,7 @@ def create_app(config_override=None) -> Flask:
     app.config["CAPTCHA_VERIFY_TIMEOUT"] = getattr(config, "CAPTCHA_VERIFY_TIMEOUT", 5.0)
     app.config["CAPTCHA_ALWAYS_ENFORCE"] = getattr(config, "CAPTCHA_ALWAYS_ENFORCE", True)
     app.config["CAPTCHA_REQUIRE_AFTER_FAILURES"] = getattr(config, "CAPTCHA_REQUIRE_AFTER_FAILURES", 0)
+    app.config["INACTIVE_ACCOUNT_DAYS"] = getattr(config, "INACTIVE_ACCOUNT_DAYS", 0)
 
     if config_override:
         app.config.update(config_override)
@@ -221,6 +223,7 @@ def create_app(config_override=None) -> Flask:
             "resend_verification",
             "forgot_password",
             "reset_password",
+            "dev_email_preview_view",
             "privacy_policy",
             "healthz",
             "health",
@@ -869,6 +872,36 @@ def create_app(config_override=None) -> Flask:
             f"skipped={result['skipped_count']}, failed={result['failed_count']}"
         )
 
+    @app.cli.command("process-inactive-accounts")
+    @click.option(
+        "--days",
+        type=int,
+        default=None,
+        help="Retention period in days (overrides INACTIVE_ACCOUNT_DAYS).",
+    )
+    @click.option(
+        "--dry-run",
+        is_flag=True,
+        default=False,
+        help="Simulate inactivity check without sending emails or deleting data.",
+    )
+    def process_inactive_accounts_cli(days, dry_run):
+        """
+        Scheduled CLI command to identify inactive accounts, send 30d/7d warnings,
+        and delete expired accounts and associated personal data (#888).
+        """
+        logger.info("Executing scheduled CLI job: process-inactive-accounts...")
+        from utils.account_retention_service import process_inactive_accounts
+
+        result = process_inactive_accounts(retention_days=days, dry_run=dry_run)
+        click.echo(
+            f"Inactive account processing complete: status={result.get('status')}, "
+            f"evaluated={result.get('evaluated_users', 0)}, "
+            f"warnings_30d={result.get('warnings_30d_sent', 0)}, "
+            f"warnings_7d={result.get('warnings_7d_sent', 0)}, "
+            f"deleted={result.get('deleted_count', 0)}"
+        )
+
     @app.cli.command("validate-company-data")
     @click.argument("paths", nargs=-1, type=click.Path())
     @click.option("--live", "--check-live-links", "check_live_links", is_flag=True, default=False, help="Verify external URLs via live HTTP requests.")
@@ -919,6 +952,7 @@ def create_app(config_override=None) -> Flask:
     app.register_blueprint(reports_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(api_bp)
+    app.register_blueprint(email_preview_bp)
 
     # Dynamic URL build error handler for backwards-compatibility with bare endpoint names (#553)
     def url_build_error_handler(error, endpoint, values):

@@ -1,5 +1,7 @@
 import pytest
 from datetime import datetime, timezone, timedelta
+import config
+from utils.database import init_db
 from utils.streak_grace_service import calculate_streak_with_grace
 
 def test_streak_with_grace_period():
@@ -23,3 +25,20 @@ def test_streak_grace_api(client):
     assert res.status_code == 200
     assert res.get_json()["status"] == "success"
     assert res.get_json()["streak"]["current_streak"] == 1
+
+
+def test_streak_navigation_page_and_calendar(client, tmp_path, monkeypatch):
+    monkeypatch.setattr(config, "DATABASE_PATH", tmp_path / "test_streak_routes.db")
+    init_db()
+    with client.session_transaction() as sess:
+        sess["user_id"] = "streak-route-student"
+
+    page_response = client.get("/streak")
+    assert page_response.status_code == 200
+    assert b"Daily Preparation Streak Tracker" in page_response.data
+
+    calendar_response = client.get("/api/streak/calendar?year=2026&month=11")
+    assert calendar_response.status_code == 200
+    calendar = calendar_response.get_json()["calendar"]
+    assert calendar["year"] == 2026
+    assert calendar["month"] == 11

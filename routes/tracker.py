@@ -58,6 +58,13 @@ from utils.pagination import Pagination
 from utils.cohort_analytics import CohortAnalyticsService
 from utils.resume_info_extractor import *
 from utils.resume_pii_service import pii_service, REDACTION_TOKENS
+from utils.readiness_timeline_service import (
+    get_placement_activity_timeline,
+    get_readiness_effort_summary,
+    log_placement_activity,
+    ALL_CATEGORIES,
+    CATEGORY_META,
+)
 from utils.analysis_cache import *
 from utils.batch_analyzer import run_batch_company_comparison
 from agents.job_recommendation_agent import JobRecommendationAgent
@@ -119,6 +126,80 @@ from .common import *
 logger = logging.getLogger(__name__)
 
 tracker_bp = Blueprint("tracker", __name__)
+
+
+def _current_streak_student_id():
+    return (
+        flask_session.get("user_id")
+        or flask_session.get("student_id")
+        or "default_student"
+    )
+
+
+@tracker_bp.route("/streak", methods=["GET"])
+def streak_tracker_view():
+    student_id = _current_streak_student_id()
+    year = request.args.get("year", type=int)
+    month = request.args.get("month", type=int)
+    streak = get_student_streak(student_id)
+    calendar = get_streak_calendar(student_id, year=year, month=month)
+    recent_activities = get_recent_preparation_activities(student_id, limit=15)
+    milestones = [
+        {"days": 3, "name": "3-Day Spark", "icon": "fa-bolt", "unlocked": streak["longest_streak"] >= 3},
+        {"days": 7, "name": "7-Day Flame", "icon": "fa-fire", "unlocked": streak["longest_streak"] >= 7},
+        {"days": 14, "name": "14-Day Torch", "icon": "fa-fire-flame-curved", "unlocked": streak["longest_streak"] >= 14},
+        {"days": 30, "name": "30-Day Firestorm", "icon": "fa-crown", "unlocked": streak["longest_streak"] >= 30},
+    ]
+    informative_message = (
+        "You haven't started your preparation streak yet! Complete a meaningful activity "
+        "— like analyzing your resume, practicing DSA problems, completing a company checklist item, "
+        "or taking a mock interview — to ignite your streak today."
+    ) if not streak.get("has_started") else None
+
+    return render_template(
+        "streak.html",
+        streak=streak,
+        calendar=calendar,
+        recent_activities=recent_activities,
+        student_id=student_id,
+        informative_message=informative_message,
+        milestones=milestones,
+    )
+
+
+@tracker_bp.route("/api/streak", methods=["GET"])
+def api_get_student_streak():
+    streak = get_student_streak(_current_streak_student_id())
+    return jsonify({
+        "success": True,
+        "streak": streak,
+        "message": "Streak retrieved successfully",
+    }), 200
+
+
+@tracker_bp.route("/api/streak/calendar", methods=["GET"])
+def api_get_streak_calendar():
+    calendar = get_streak_calendar(
+        _current_streak_student_id(),
+        year=request.args.get("year", type=int),
+        month=request.args.get("month", type=int),
+    )
+    return jsonify({"success": True, "calendar": calendar}), 200
+
+
+@tracker_bp.route("/api/preparation/streak", methods=["POST"])
+def api_calculate_preparation_streak():
+    """Calculates a preparation streak with the configured grace period."""
+    from utils.streak_grace_service import calculate_streak_with_grace
+
+    data = request.get_json(silent=True) or {}
+    streak = calculate_streak_with_grace(
+        data.get("activity_dates", []),
+        data.get("current_date"),
+        grace_days_allowed=int(data.get("grace_days", 1)),
+    )
+    return jsonify({"status": "success", "streak": streak}), 200
+
 
 @tracker_bp.route("/leaderboard", methods=["GET"])
 def leaderboard():
@@ -2127,6 +2208,352 @@ def api_delete_offer_note(note_id):
     if deleted:
         return jsonify({"status": "success", "message": "Offer decision note removed"}), 200
     return jsonify({"status": "not_found", "message": "Offer note not found"}), 404
+
+
+# ==============================================================================
+# Peer Goal Accountability Groups (#peer-groups)
+# ==============================================================================
+
+@tracker_bp.route("/peer-groups", methods=["GET"])
+@tracker_bp.route("/peer-groups/<group_id>", methods=["GET"])
+def peer_groups_view(group_id=None):
+    """
+    Renders the peer goal accountability groups dashboard.
+    Enables students to create private study circles, invite peers,
+    track shared milestones, and toggle progress privacy.
+    """
+    from utils.peer_accountability_service import (
+        list_student_groups,
+        get_group_details,
+    )
+
+    student_id = (
+        request.args.get("student_id")
+        or flask_session.get("user_id")
+        or flask_session.get("student_id")
+        or "default_student"
+    ).strip()
+
+    groups = list_student_groups(student_id)
+
+    target_group_id = group_id or request.args.get("group_id")
+    active_group_data = None
+    group_error = None
+
+    if target_group_id:
+        try:
+            active_group_data = get_group_details(target_group_id, current_student_id=student_id)
+        except PermissionError as pe:
+            group_error = str(pe)
+        except KeyError:
+            group_error = "Accountability group not found."
+        except Exception as e:
+            group_error = f"Error loading group: {e}"
+    elif groups:
+        # Default to first group
+        try:
+            active_group_data = get_group_details(groups[0]["id"], current_student_id=student_id)
+        except Exception:
+            active_group_data = None
+
+    is_api = (
+        request.is_json
+        or request.headers.get("X-Requested-With") == "XMLHttpRequest"
+        or "application/json" in request.headers.get("Accept", "")
+    )
+    if is_api:
+        return jsonify({
+            "status": "success",
+            "groups": groups,
+            "active_group": active_group_data,
+            "error": group_error,
+        }), 200
+
+    return render_template(
+        "peer_groups.html",
+        groups=groups,
+        active_group=active_group_data,
+        group_error=group_error,
+        student_id=student_id,
+    )
+
+
+@tracker_bp.route("/api/peer-groups", methods=["GET", "POST"])
+def api_peer_groups():
+    """
+    GET: Lists all peer groups for the authenticated student.
+    POST: Creates a new private accountability circle with unique invite code.
+    """
+    from utils.peer_accountability_service import list_student_groups, create_peer_group
+
+    if request.method == "GET":
+        student_id = (
+            request.args.get("student_id")
+            or flask_session.get("user_id")
+            or flask_session.get("student_id")
+            or "default_student"
+        ).strip()
+        groups = list_student_groups(student_id)
+        return jsonify({"status": "success", "groups": groups}), 200
+
+    payload = request.get_json(silent=True) or request.form or {}
+    student_id = (
+        payload.get("student_id")
+        or flask_session.get("user_id")
+        or flask_session.get("student_id")
+        or "default_student"
+    ).strip()
+
+    name = (payload.get("name") or "").strip()
+    if not name:
+        return jsonify({"status": "error", "message": "Group name is required."}), 400
+
+    description = payload.get("description", "")
+    display_name = payload.get("display_name")
+
+    try:
+        new_group = create_peer_group(
+            creator_student_id=student_id,
+            name=name,
+            description=description,
+            display_name=display_name,
+        )
+        return jsonify({
+            "status": "success",
+            "message": "Peer accountability group created.",
+            "group": new_group,
+        }), 201
+    except ValueError as ve:
+        return jsonify({"status": "error", "message": str(ve)}), 400
+    except Exception as e:
+        logger.error(f"Error creating peer group: {e}")
+        return jsonify({"status": "error", "message": "Failed to create group."}), 500
+
+
+@tracker_bp.route("/api/peer-groups/join", methods=["POST"])
+def api_join_peer_group():
+    """
+    Joins a private peer accountability group via invite code.
+    """
+    from utils.peer_accountability_service import join_peer_group
+
+    payload = request.get_json(silent=True) or request.form or {}
+    student_id = (
+        payload.get("student_id")
+        or flask_session.get("user_id")
+        or flask_session.get("student_id")
+        or "default_student"
+    ).strip()
+
+    invite_code = (payload.get("invite_code") or "").strip()
+    if not invite_code:
+        return jsonify({"status": "error", "message": "Invite code is required."}), 400
+
+    display_name = payload.get("display_name")
+    share_progress = payload.get("share_progress", 1)
+    if isinstance(share_progress, str):
+        share_progress = 1 if share_progress.lower() in ("1", "true", "yes") else 0
+
+    try:
+        res = join_peer_group(
+            student_id=student_id,
+            invite_code=invite_code,
+            display_name=display_name,
+            share_progress=share_progress,
+        )
+        return jsonify({
+            "status": "success",
+            "message": "Enrolled in peer group successfully.",
+            "membership": res,
+        }), 200
+    except ValueError as ve:
+        return jsonify({"status": "error", "message": str(ve)}), 404
+    except Exception as e:
+        logger.error(f"Error joining peer group: {e}")
+        return jsonify({"status": "error", "message": "Failed to join group."}), 500
+
+
+@tracker_bp.route("/api/peer-groups/<group_id>", methods=["GET"])
+def api_get_peer_group(group_id):
+    """
+    Returns full details for a private peer accountability group,
+    with privacy enforcement masking opted-out members and shielding sensitive application data.
+    """
+    from utils.peer_accountability_service import get_group_details
+
+    student_id = (
+        request.args.get("student_id")
+        or flask_session.get("user_id")
+        or flask_session.get("student_id")
+        or "default_student"
+    ).strip()
+
+    try:
+        data = get_group_details(group_id=group_id, current_student_id=student_id)
+        return jsonify({"status": "success", "data": data}), 200
+    except PermissionError as pe:
+        return jsonify({"status": "error", "message": str(pe)}), 403
+    except KeyError as ke:
+        return jsonify({"status": "error", "message": str(ke)}), 404
+    except Exception as e:
+        logger.error(f"Error fetching peer group: {e}")
+        return jsonify({"status": "error", "message": "Failed to fetch group details."}), 500
+
+
+@tracker_bp.route("/api/peer-groups/<group_id>/goals", methods=["POST"])
+def api_create_peer_group_goal(group_id):
+    """
+    Creates a new shared goal/milestone in the peer accountability group.
+    """
+    from utils.peer_accountability_service import create_group_goal
+
+    payload = request.get_json(silent=True) or request.form or {}
+    student_id = (
+        payload.get("student_id")
+        or flask_session.get("user_id")
+        or flask_session.get("student_id")
+        or "default_student"
+    ).strip()
+
+    title = (payload.get("title") or "").strip()
+    if not title:
+        return jsonify({"status": "error", "message": "Goal title is required."}), 400
+
+    category = payload.get("category", "general")
+    target_count = payload.get("target_count", 1)
+    target_date = payload.get("target_date")
+    description = payload.get("description")
+
+    try:
+        goal = create_group_goal(
+            student_id=student_id,
+            group_id=group_id,
+            title=title,
+            category=category,
+            target_count=target_count,
+            target_date=target_date,
+            description=description,
+        )
+        return jsonify({
+            "status": "success",
+            "message": "Shared goal created.",
+            "goal": goal,
+        }), 201
+    except PermissionError as pe:
+        return jsonify({"status": "error", "message": str(pe)}), 403
+    except ValueError as ve:
+        return jsonify({"status": "error", "message": str(ve)}), 400
+    except Exception as e:
+        logger.error(f"Error creating peer goal: {e}")
+        return jsonify({"status": "error", "message": "Failed to create goal."}), 500
+
+
+@tracker_bp.route("/api/peer-groups/goals/<goal_id>/progress", methods=["POST"])
+def api_update_peer_goal_progress(goal_id):
+    """
+    Updates completion progress or marks a group task as complete.
+    """
+    from utils.peer_accountability_service import update_goal_progress
+
+    payload = request.get_json(silent=True) or request.form or {}
+    student_id = (
+        payload.get("student_id")
+        or flask_session.get("user_id")
+        or flask_session.get("student_id")
+        or "default_student"
+    ).strip()
+
+    completed_count = payload.get("completed_count")
+    is_completed = payload.get("is_completed")
+    if is_completed is not None and isinstance(is_completed, str):
+        is_completed = is_completed.lower() in ("1", "true", "yes")
+
+    try:
+        prog = update_goal_progress(
+            student_id=student_id,
+            goal_id=goal_id,
+            completed_count=completed_count,
+            is_completed=is_completed,
+        )
+        return jsonify({
+            "status": "success",
+            "message": "Progress recorded.",
+            "progress": prog,
+        }), 200
+    except PermissionError as pe:
+        return jsonify({"status": "error", "message": str(pe)}), 403
+    except ValueError as ve:
+        return jsonify({"status": "error", "message": str(ve)}), 400
+    except Exception as e:
+        logger.error(f"Error updating goal progress: {e}")
+        return jsonify({"status": "error", "message": "Failed to record progress."}), 500
+
+
+@tracker_bp.route("/api/peer-groups/<group_id>/privacy", methods=["POST"])
+def api_update_peer_group_privacy(group_id):
+    """
+    Allows a student member to opt in or opt out of public progress sharing with group peers.
+    """
+    from utils.peer_accountability_service import update_member_privacy
+
+    payload = request.get_json(silent=True) or request.form or {}
+    student_id = (
+        payload.get("student_id")
+        or flask_session.get("user_id")
+        or flask_session.get("student_id")
+        or "default_student"
+    ).strip()
+
+    share_progress = payload.get("share_progress")
+    if share_progress is not None:
+        share_progress = 1 if str(share_progress).lower() in ("1", "true", "yes") else 0
+    else:
+        share_progress = 1
+
+    display_name = payload.get("display_name")
+
+    try:
+        updated = update_member_privacy(
+            student_id=student_id,
+            group_id=group_id,
+            share_progress=share_progress,
+            display_name=display_name,
+        )
+        return jsonify({
+            "status": "success",
+            "message": "Privacy settings updated.",
+            "settings": updated,
+        }), 200
+    except PermissionError as pe:
+        return jsonify({"status": "error", "message": str(pe)}), 403
+    except Exception as e:
+        logger.error(f"Error updating peer privacy: {e}")
+        return jsonify({"status": "error", "message": "Failed to update privacy settings."}), 500
+
+
+@tracker_bp.route("/api/peer-groups/<group_id>/leave", methods=["POST"])
+def api_leave_peer_group(group_id):
+    """
+    Leaves a peer accountability group and purges member progress.
+    """
+    from utils.peer_accountability_service import leave_peer_group
+
+    payload = request.get_json(silent=True) or request.form or {}
+    student_id = (
+        payload.get("student_id")
+        or flask_session.get("user_id")
+        or flask_session.get("student_id")
+        or "default_student"
+    ).strip()
+
+    try:
+        success = leave_peer_group(student_id=student_id, group_id=group_id)
+        if success:
+            return jsonify({"status": "success", "message": "Left accountability group."}), 200
+        return jsonify({"status": "error", "message": "Member not found in group."}), 404
+    except Exception as e:
+        logger.error(f"Error leaving peer group: {e}")
+        return jsonify({"status": "error", "message": "Failed to leave group."}), 500
 
 
 

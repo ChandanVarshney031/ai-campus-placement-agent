@@ -35,19 +35,19 @@
   </script>
 </head>
 
-<body>
+<body class="home-page">
   <!-- Accessibility Skip-to-Content Link -->
   <a href="#main-content" class="skip-link">Skip to main content</a>
 
   <!-- Navigation -->
   
 <!-- Redesigned Responsive Navigation -->
-<nav class="navbar navbar-expand-xl navbar-light bg-white border-bottom sticky-top py-2"
+<nav class="navbar navbar-expand-xxl app-navbar home-navbar sticky-top"
   aria-label="Main navigation">
-  <div class="container">
+  <div class="container app-navbar-container">
 
     <!-- Brand -->
-    <a class="navbar-brand navbar-brand-custom fw-bold fs-5" href="/">
+    <a class="navbar-brand navbar-brand-custom app-brand" href="/">
       <i class="fa-solid fa-graduation-cap text-primary me-1"></i>
       AI Campus <span class="text-primary">Placement Agent</span>
     </a>
@@ -64,7 +64,7 @@
     <div class="collapse navbar-collapse" id="mainNavbar">
 
       <!-- Main Navigation Groups -->
-      <ul class="navbar-nav me-auto ms-xl-3 my-3 my-xl-0 gap-xl-1">
+      <ul class="navbar-nav me-auto ms-xl-3 my-3 my-xl-0 gap-xl-1 app-nav-links">
 
         <!-- Platform -->
         <li class="nav-item dropdown">
@@ -213,7 +213,7 @@
       </ul>
 
       <!-- Right Side Actions -->
-      <div class="d-flex flex-column flex-xl-row align-items-stretch align-items-xl-center gap-2 pb-3 pb-xl-0">
+      <div class="d-flex flex-column flex-xl-row align-items-stretch align-items-xl-center gap-2 pb-3 pb-xl-0 app-nav-tools home-nav-tools">
 
         <!-- Language Selector -->
         <div class="dropdown">
@@ -344,108 +344,264 @@
   <!-- Main Content -->
   <main id="main-content" tabindex="-1">
 
+  <!-- Hero Section -->
+  <section class="hero-section home-hero">
+    <div class="container">
+      <div class="row align-items-center home-hero-grid">
+        <div class="col-lg-6 home-hero-copy">
+          <div class="home-eyebrow"><span class="home-eyebrow-mark"></span> A smarter path to campus placements</div>
+          <h1 class="hero-title">{{ _t('hero_title', 'Get placement-ready, one focused step at a time.') }}</h1>
+          <p class="hero-subtitle">
+            {{ _t('hero_subtitle', 'Turn your resume into a clear preparation plan. Understand your role fit, close skill gaps, and practice for interviews with AI-guided feedback.') }}
+          </p>
+          <div class="home-hero-proof">
+            <span><i class="fa-solid fa-check" aria-hidden="true"></i>{{ _t('hero_badge_ats', 'Resume & ATS insights') }}</span>
+            <span><i class="fa-solid fa-check" aria-hidden="true"></i>{{ _t('hero_badge_projects', 'Role-focused skill plans') }}</span>
+            <span><i class="fa-solid fa-check" aria-hidden="true"></i>{{ _t('hero_badge_interview', 'Interactive interview practice') }}</span>
+          </div>
+          <div class="home-hero-actions">
+            <a href="#analysisForm" class="btn btn-primary home-primary-cta">Get started <i class="fa-solid fa-arrow-right ms-2" aria-hidden="true"></i></a>
+            <a href="#features" class="btn home-secondary-cta">Explore the platform</a>
+          </div>
+          <a href="{{ url_for('demo_mode_view') }}" class="home-demo-link" id="btnHeroTrySampleResume"
+            title="Explore full placement evaluation with a bundled sample resume and job description (No login or AI call required)">
+            <i class="fa-solid fa-circle-play me-1" aria-hidden="true"></i> Try the sample analysis <span>No login required</span>
+          </a>
+        </div>
+
+        <div class="col-lg-6 home-hero-visual">
+          <div class="home-product-preview" aria-label="Illustration of the platform preparation workflow">
+            <div class="home-preview-topbar">
+              <div class="home-preview-brand"><span class="home-preview-brand-icon"><i class="fa-solid fa-graduation-cap" aria-hidden="true"></i></span> Placement workspace</div>
+              <span class="home-preview-live"><span></span> Your next steps</span>
+            </div>
+            <div class="home-preview-body">
+              <div class="home-preview-kicker">A clearer preparation path</div>
+              <h2>From resume review to interview practice</h2>
+              <p class="home-preview-intro">Bring your preparation into one focused workflow.</p>
+              <div class="home-preview-flow">
+                <div class="home-preview-step">
+                  <span class="home-preview-step-icon"><i class="fa-solid fa-file-lines" aria-hidden="true"></i></span>
+                  <div><strong>Understand your resume</strong><span>ATS signals, strengths, and practical feedback</span></div>
+                  <i class="fa-solid fa-arrow-right home-preview-arrow" aria-hidden="true"></i>
+                </div>
+                <div class="home-preview-step">
+                  <span class="home-preview-step-icon"><i class="fa-solid fa-bullseye" aria-hidden="true"></i></span>
+                  <div><strong>Focus on the right skills</strong><span>Role matching and skill-gap guidance</span></div>
+                  <i class="fa-solid fa-arrow-right home-preview-arrow" aria-hidden="true"></i>
+                </div>
+                <div class="home-preview-step">
+                  <span class="home-preview-step-icon"><i class="fa-solid fa-comments" aria-hidden="true"></i></span>
+                  <div><strong>Practice with purpose</strong><span>Roadmaps, company prep, and mock interviews</span></div>
+                  <i class="fa-solid fa-check home-preview-complete" aria-hidden="true"></i>
+                </div>
+              </div>
+            </div>
+            <div class="home-preview-footer"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i> Built around your goals and preparation data</div>
+          </div>
+          <div class="home-preview-caption"><span></span> Your preparation tools, connected in one place</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- First-Time User Walkthrough Banner (#350) -->
-  <div class="container pt-3" id="userWalkthroughBannerContainer">
-    <div class="card glass-card border-primary border-opacity-25 shadow-sm p-4 mb-3 rounded-4 {{ 'd-none' if walkthrough_dismissed else '' }}" id="userWalkthroughBanner" role="region" aria-label="First-time user walkthrough">
+  <div class="container home-walkthrough-container" id="userWalkthroughBannerContainer">
+    <div class="card glass-card border-primary border-opacity-25 p-4 mb-3 rounded-4 {{ 'd-none' if walkthrough_dismissed else '' }}" id="userWalkthroughBanner" role="region" aria-label="First-time user walkthrough">
       <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
         <div class="d-flex align-items-center gap-2">
           <span class="badge bg-primary text-white rounded-pill px-3 py-1 fw-semibold">
-            <i class="fa-solid fa-compass me-1"></i> Quick Walkthrough
+            <i class="fa-solid fa-compass me-1" aria-hidden="true"></i> Quick Walkthrough
           </span>
-          <h5 class="fw-bold mb-0 text-dark">Welcome to AI Campus Placement Agent</h5>
+          <h2 class="h5 fw-bold mb-0 text-dark">Welcome to AI Campus Placement Agent</h2>
         </div>
         <div class="d-flex align-items-center gap-2">
           <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 btn-open-walkthrough" data-bs-toggle="modal" data-bs-target="#userWalkthroughModal" id="btnLaunchWalkthroughModal">
-            <i class="fa-solid fa-play me-1"></i> Interactive Tour
+            <i class="fa-solid fa-play me-1" aria-hidden="true"></i> Interactive Tour
           </button>
           <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" id="btnDismissWalkthroughBanner" aria-label="Dismiss walkthrough banner">
-            <i class="fa-solid fa-xmark me-1"></i> Skip
+            <i class="fa-solid fa-xmark me-1" aria-hidden="true"></i> Skip
           </button>
         </div>
       </div>
       <p class="text-secondary small mb-3">
         New here? Explore the 4 core areas of the platform designed to guide your preparation from resume screening to final job offer.
       </p>
-
-      <!-- 4 Core Areas Grid -->
       <div class="row g-3">
         {% for step in walkthrough_steps %}
         <div class="col-md-6 col-lg-3">
-          <div class="p-3 bg-white rounded-4 border h-100 shadow-xs d-flex flex-column justify-content-between walkthrough-card">
+          <div class="p-3 bg-white rounded-4 border h-100 d-flex flex-column justify-content-between walkthrough-card">
             <div>
               <div class="d-flex align-items-center justify-content-between mb-2">
-                <span class="badge bg-{{ step.color }}-subtle text-{{ step.color }} border border-{{ step.color }}-subtle rounded-pill px-2 py-1 small fw-semibold">
-                  Step {{ step.step_number }}
-                </span>
-                <i class="fa-solid {{ step.icon }} text-{{ step.color }} fs-4"></i>
+                <span class="badge bg-{{ step.color }}-subtle text-{{ step.color }} border border-{{ step.color }}-subtle rounded-pill px-2 py-1 small fw-semibold">Step {{ step.step_number }}</span>
+                <i class="fa-solid {{ step.icon }} text-{{ step.color }} fs-4" aria-hidden="true"></i>
               </div>
-              <h6 class="fw-bold text-dark mb-1">{{ step.title }}</h6>
+              <h3 class="h6 fw-bold text-dark mb-1">{{ step.title }}</h3>
               <p class="text-muted small mb-3">{{ step.short_desc }}</p>
             </div>
-            <div>
-              {% if step.target_element %}
-              <button type="button" class="btn btn-sm btn-outline-{{ step.color }} rounded-pill w-100 btn-walkthrough-nav" data-target="{{ step.target_element }}">
-                {{ step.action_text }} <i class="fa-solid fa-arrow-down ms-1"></i>
-              </button>
-              {% else %}
-              <a href="{{ step.action_url }}" class="btn btn-sm btn-outline-{{ step.color }} rounded-pill w-100">
-                {{ step.action_text }} <i class="fa-solid fa-arrow-right ms-1"></i>
-              </a>
-              {% endif %}
-            </div>
+            {% if step.target_element %}
+            <button type="button" class="btn btn-sm btn-outline-{{ step.color }} rounded-pill w-100 btn-walkthrough-nav" data-target="{{ step.target_element }}">{{ step.action_text }} <i class="fa-solid fa-arrow-down ms-1" aria-hidden="true"></i></button>
+            {% else %}
+            <a href="{{ step.action_url }}" class="btn btn-sm btn-outline-{{ step.color }} rounded-pill w-100">{{ step.action_text }} <i class="fa-solid fa-arrow-right ms-1" aria-hidden="true"></i></a>
+            {% endif %}
           </div>
         </div>
         {% endfor %}
       </div>
-
-      <!-- Recommended Next Step Callout -->
       <div class="p-3 bg-light rounded-3 border d-flex flex-wrap align-items-center justify-content-between gap-2 mt-3">
         <div class="d-flex align-items-center gap-2">
-          <i class="fa-solid fa-lightbulb text-warning fs-5"></i>
-          <span class="small text-secondary">
-            <strong class="text-dark">Recommended Next Step:</strong> Upload your PDF or DOCX resume below in the Workspace to evaluate your placement readiness score.
-          </span>
+          <i class="fa-solid fa-lightbulb text-warning fs-5" aria-hidden="true"></i>
+          <span class="small text-secondary"><strong class="text-dark">Recommended Next Step:</strong> Upload your PDF or DOCX resume below in the Workspace to evaluate your placement readiness score.</span>
         </div>
         <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 text-nowrap btn-walkthrough-nav" data-target="analysisForm" id="btnWalkthroughNextStep">
-          Start with Resume <i class="fa-solid fa-arrow-down ms-1"></i>
+          Start with Resume <i class="fa-solid fa-arrow-down ms-1" aria-hidden="true"></i>
         </button>
       </div>
     </div>
   </div>
 
-  <!-- Hero Section -->
-  <section class="hero-section">
+  <section class="home-steps-section" id="how-it-works" aria-labelledby="howItWorksTitle">
     <div class="container">
-      <div class="row align-items-center">
-        <div class="col-lg-6 mb-5 mb-lg-0">
-          <h1 class="hero-title">{{ _t('hero_title', 'Prepare Smart. Get Placed Faster.') }}</h1>
-          <p class="hero-subtitle">
-            {{ _t('hero_subtitle', 'An intelligent multi-agent placement mentor that analyzes your resume, checks job description matches, suggests projects to bridge skill gaps, generates study roadmaps, and conducts interactive mock interviews.') }}
-          </p>
-          <div class="d-flex flex-wrap gap-3">
-            <div class="d-flex align-items-center gap-2 text-secondary me-3">
-              <i class="fa-solid fa-check text-success"></i> {{ _t('hero_badge_ats', 'ATS Score Analysis') }}
-            </div>
-            <div class="d-flex align-items-center gap-2 text-secondary me-3">
-              <i class="fa-solid fa-check text-success"></i> {{ _t('hero_badge_projects', 'Skill Gap Projects') }}
-            </div>
-            <div class="d-flex align-items-center gap-2 text-secondary">
-              <i class="fa-solid fa-check text-success"></i> {{ _t('hero_badge_interview', 'Live AI Mock Interviews') }}
-            </div>
-          </div>
-          <div class="mt-4">
-            <a href="{{ url_for('demo_mode_view') }}" class="btn btn-outline-success rounded-pill px-4 py-2 fw-semibold d-inline-flex align-items-center gap-2 shadow-sm" id="btnHeroTrySampleResume" title="Explore full placement evaluation with a bundled sample resume and job description (No login or AI call required)">
-              <i class="fa-solid fa-flask-vial text-success"></i>
-              <span>Try with a sample resume</span>
-              <span class="badge bg-success text-white rounded-pill px-2 py-0 small">Instant Demo</span>
-            </a>
-          </div>
-        </div>
+      <div class="home-section-heading">
+        <span class="home-section-eyebrow">A practical workflow</span>
+        <h2 id="howItWorksTitle">Make your next step clear</h2>
+        <p>Start with the materials you already have. Build your preparation from real resume and role insights.</p>
+      </div>
+      <div class="home-steps-grid">
+        <article class="home-step-card">
+          <span class="home-step-number">01</span>
+          <div class="home-step-icon"><i class="fa-solid fa-file-arrow-up" aria-hidden="true"></i></div>
+          <h3>Review your resume</h3>
+          <p>Upload a PDF or DOCX, choose a saved resume, or paste your resume text for analysis.</p>
+          <a href="#analysisForm">Start with your resume <i class="fa-solid fa-arrow-right ms-1" aria-hidden="true"></i></a>
+        </article>
+        <article class="home-step-card">
+          <span class="home-step-number">02</span>
+          <div class="home-step-icon"><i class="fa-solid fa-chart-simple" aria-hidden="true"></i></div>
+          <h3>See where you stand</h3>
+          <p>Explore ATS feedback, role alignment, skill gaps, and recommendations from your analysis.</p>
+          <span class="home-step-note">Insights based on your analysis</span>
+        </article>
+        <article class="home-step-card">
+          <span class="home-step-number">03</span>
+          <div class="home-step-icon"><i class="fa-solid fa-route" aria-hidden="true"></i></div>
+          <h3>Prepare with direction</h3>
+          <p>Use your roadmap, company preparation, and interview practice to focus your next steps.</p>
+          <a href="/companies">Explore company preparation <i class="fa-solid fa-arrow-right ms-1" aria-hidden="true"></i></a>
+        </article>
+      </div>
+    </div>
+  </section>
 
+  <section class="home-features-section features-section" id="features" aria-labelledby="featuresTitle">
+    <div class="container">
+      <div class="home-section-heading home-section-heading-left">
+        <span class="home-section-eyebrow">One connected platform</span>
+        <h2 id="featuresTitle">{{ _t('features_heading', 'Everything you need to prepare with confidence') }}</h2>
+        <p>Move from evaluation to focused practice without losing sight of your goals.</p>
+      </div>
+      <div class="row g-3 home-feature-grid">
+        <div class="col-md-6 col-xl-4">
+          <article class="home-feature-card">
+            <span class="home-feature-icon"><i class="fa-solid fa-file-circle-check" aria-hidden="true"></i></span>
+            <h3>{{ _t('feature_resume_title', 'Resume analysis') }}</h3>
+            <p>{{ _t('feature_resume_desc', 'Review resume formatting, projects, experience, ATS compatibility, and targeted improvements.') }}</p>
+            <a href="#analysisForm" aria-label="Start resume analysis">Analyze your resume <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+          </article>
+        </div>
+        <div class="col-md-6 col-xl-4">
+          <article class="home-feature-card">
+            <span class="home-feature-icon"><i class="fa-solid fa-code-branch" aria-hidden="true"></i></span>
+            <h3>{{ _t('feature_job_title', 'Job description matching') }}</h3>
+            <p>{{ _t('feature_job_desc', 'Compare skills and projects with a target role and understand where your experience aligns.') }}</p>
+            <a href="#analysisForm" aria-label="Match your resume to a role">Match your resume <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+          </article>
+        </div>
+        <div class="col-md-6 col-xl-4">
+          <article class="home-feature-card">
+            <span class="home-feature-icon"><i class="fa-solid fa-bullseye" aria-hidden="true"></i></span>
+            <h3>{{ _t('feature_skill_title', 'Skill-gap guidance') }}</h3>
+            <p>{{ _t('feature_skill_desc', 'Identify missing skills, understand their priority, and explore learning pathways and projects.') }}</p>
+            <a href="#analysisForm" aria-label="Find your skill gaps">Find your focus areas <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+          </article>
+        </div>
+        <div class="col-md-6 col-xl-4">
+          <article class="home-feature-card">
+            <span class="home-feature-icon"><i class="fa-solid fa-calendar-week" aria-hidden="true"></i></span>
+            <h3>{{ _t('feature_roadmap_title', 'Personalized preparation roadmaps') }}</h3>
+            <p>{{ _t('feature_roadmap_desc', 'Build a six-week preparation curriculum with estimated study time, practice, and checkpoints.') }}</p>
+            <a href="/role-preparation">Explore role preparation <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+          </article>
+        </div>
+        <div class="col-md-6 col-xl-4">
+          <article class="home-feature-card">
+            <span class="home-feature-icon"><i class="fa-solid fa-comments" aria-hidden="true"></i></span>
+            <h3>{{ _t('feature_interview_title', 'Mock interview practice') }}</h3>
+            <p>{{ _t('feature_interview_desc', 'Practice tailored questions and receive feedback on your answers and communication.') }}</p>
+            <a href="/interview/question-bank">Explore interview practice <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+          </article>
+        </div>
+        <div class="col-md-6 col-xl-4">
+          <article class="home-feature-card">
+            <span class="home-feature-icon"><i class="fa-solid fa-briefcase" aria-hidden="true"></i></span>
+            <h3>Application tracking</h3>
+            <p>Organize applications, follow their progress, and keep placement activities together.</p>
+            <a href="/applications">Open application tracker <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+          </article>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="home-companies-section" id="companies" aria-labelledby="companiesTitle">
+    <div class="container">
+      <div class="home-companies-layout">
+        <div>
+          <span class="home-section-eyebrow">Company preparation</span>
+          <h2 id="companiesTitle">Prepare for the companies on your list</h2>
+          <p>Explore company profiles, hiring guidance, eligibility, and preparation checklists already available in the platform.</p>
+        </div>
+        <div class="home-company-list" aria-label="Companies supported by the platform">
+          {% for company in companies[:10] %}
+          <span class="home-company-chip">{{ company }}</span>
+          {% endfor %}
+          <a class="home-company-link" href="/companies">Browse companies <i class="fa-solid fa-arrow-right ms-1" aria-hidden="true"></i></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="home-privacy-section" aria-labelledby="privacyHighlightsTitle">
+    <div class="container">
+      <div class="home-privacy-card">
+        <div class="home-privacy-icon"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i></div>
+        <div class="home-privacy-copy">
+          <span class="home-section-eyebrow">Privacy by design</span>
+          <h2 id="privacyHighlightsTitle">Your preparation stays yours</h2>
+          <p>Resume contact details are redacted before AI processing, temporary uploads are removed after analysis, and consent is requested before submission.</p>
+          <a href="{{ url_for('privacy_policy') }}">Read the privacy notice <i class="fa-solid fa-arrow-right ms-1" aria-hidden="true"></i></a>
+        </div>
+        <div class="home-privacy-points">
+          <span><i class="fa-solid fa-check" aria-hidden="true"></i> Resume data redaction</span>
+          <span><i class="fa-solid fa-check" aria-hidden="true"></i> Temporary upload cleanup</span>
+          <span><i class="fa-solid fa-check" aria-hidden="true"></i> Explicit processing consent</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="home-workspace-section" id="analysis-workspace" aria-labelledby="workspaceSectionTitle">
+    <div class="container">
+      <div class="home-workspace-intro">
+        <span class="home-section-eyebrow">Your next step starts here</span>
+        <h2 id="workspaceSectionTitle">Turn your resume into a preparation plan</h2>
+        <p>Use your own resume, a saved version, or pasted text. Your analysis options and privacy controls are below.</p>
+      </div>
+      <div class="row">
         <!-- Upload Form Container -->
-        <div class="col-lg-6">
-          <div class="card glass-card p-4">
-            <h4 class="fw-bold mb-4 text-center">{{ _t('workspace_title', 'Placement Analysis Workspace') }}</h4>
+        <div class="col-12 col-xl-10 mx-auto">
+          <div class="card glass-card home-workspace-card p-4 p-lg-5">
+            <h3 class="fw-bold mb-4 text-center">{{ _t('workspace_title', 'Placement Analysis Workspace') }}</h3>
 
             <!-- Form Reset Confirmation Alert -->
             <div id="formResetAlert" class="alert alert-success alert-dismissible fade show d-none p-2 px-3 small d-flex align-items-center justify-content-between rounded-3 mb-3" role="alert">
@@ -583,7 +739,7 @@
                             <i class="fa-solid fa-file-pdf" id="previewFileIcon"></i>
                           </div>
                           <div>
-                            <h6 class="fw-bold mb-1 text-truncate text-dark" id="previewFileName" style="max-width: 320px;">resume.pdf</h6>
+                            <div class="fw-bold mb-1 text-truncate text-dark" id="previewFileName" style="max-width: 320px;">resume.pdf</div>
                             <div class="d-flex align-items-center gap-2 text-muted small">
                               <span id="previewFileSize">0 KB</span>
                               <span>&bull;</span>
@@ -726,7 +882,7 @@
                   </div>
                   <div id="roleTemplatePreview" class="border rounded-3 p-3 bg-light d-none mb-2">
                     <div class="d-flex justify-content-between align-items-start mb-2">
-                      <h6 class="fw-bold mb-0 text-primary" id="rolePreviewTitle">Role Title</h6>
+                      <div class="fw-bold mb-0 text-primary" id="rolePreviewTitle">Role Title</div>
                       <span class="badge bg-primary-subtle text-primary border border-primary-subtle">Predefined Campus Benchmark</span>
                     </div>
                     <p class="small text-muted mb-2" id="rolePreviewDescription"></p>
@@ -804,7 +960,7 @@
                     <a href="{{ url_for('saved_job_descriptions_view') }}" class="btn btn-outline-primary">Manage</a>
                   </div>
                   {% endif %}
-                  <textarea name="job_description" id="jdInput" rows="4" class="form-control rounded-3"
+                  <textarea name="job_description" id="jdInput" rows="4" class="form-control rounded-3" aria-label="Job description or target role benchmark"
                     placeholder="Paste the job post description here to check your matching compatibility..."></textarea>
                   <div class="d-flex justify-content-between align-items-center mt-1 px-1">
                     <span id="jdFeedback" class="small text-muted">
@@ -824,7 +980,7 @@
                       <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
                         <div class="d-flex align-items-center gap-2">
                           <i class="fa-solid fa-clipboard-check text-primary fs-5"></i>
-                          <h6 class="fw-bold text-dark mb-0">Job Description Quality: <span id="jdQualityScore">0</span>/100</h6>
+                          <div class="fw-bold text-dark mb-0">Job Description Quality: <span id="jdQualityScore">0</span>/100</div>
                         </div>
                         <span id="jdQualityBadge" class="badge rounded-pill px-3 py-1 bg-secondary">Evaluating</span>
                       </div>
@@ -1014,64 +1170,6 @@
     </div>
   </section>
 
-  <!-- Multi-Agent Features Section -->
-  <section class="py-5 border-top bg-white">
-    <div class="container">
-      <h3 class="fw-bold text-center mb-5">{{ _t('features_heading', 'Powered by Specialized AI Agents') }}</h3>
-      <div class="row g-4">
-
-        <div class="col-md-4">
-          <div class="card h-100 border-0 bg-light p-4 rounded-4">
-            <div class="mb-3 text-primary fs-2"><i class="fa-solid fa-file-invoice"></i></div>
-            <h5 class="fw-bold">{{ _t('feature_resume_title', 'Resume Analysis Agent') }}</h5>
-            <p class="text-secondary small mb-0">{{ _t('feature_resume_desc', 'Analyzes resume formatting, projects, experiences, and calculates an ATS compatibility score with targeted improvements.') }}</p>
-          </div>
-        </div>
-
-        <div class="col-md-4">
-          <div class="card h-100 border-0 bg-light p-4 rounded-4">
-            <div class="mb-3 text-primary fs-2"><i class="fa-solid fa-code-merge"></i></div>
-            <h5 class="fw-bold">{{ _t('feature_job_title', 'Job Matching Agent') }}</h5>
-            <p class="text-secondary small mb-0">{{ _t('feature_job_desc', 'Compares your skills and projects with target role job descriptions, generating exact match percentages and priority adjustments.') }}</p>
-          </div>
-        </div>
-
-        <div class="col-md-4">
-          <div class="card h-100 border-0 bg-light p-4 rounded-4">
-            <div class="mb-3 text-primary fs-2"><i class="fa-solid fa-triangle-exclamation"></i></div>
-            <h5 class="fw-bold">{{ _t('feature_skill_title', 'Skill Gap Agent') }}</h5>
-            <p class="text-secondary small mb-0">{{ _t('feature_skill_desc', 'Checks for missing skills, rates importance/learning complexity, and recommends custom learning pathways and micro-projects.') }}</p>
-          </div>
-        </div>
-
-        <div class="col-md-4">
-          <div class="card h-100 border-0 bg-light p-4 rounded-4">
-            <div class="mb-3 text-primary fs-2"><i class="fa-solid fa-route"></i></div>
-            <h5 class="fw-bold">{{ _t('feature_roadmap_title', 'Learning Roadmap Agent') }}</h5>
-            <p class="text-secondary small mb-0">{{ _t('feature_roadmap_desc', 'Compiles a personalized 6-week preparation curriculum with estimated learning times, coding challenges, and weekly checkpoints.') }}</p>
-          </div>
-        </div>
-
-        <div class="col-md-4">
-          <div class="card h-100 border-0 bg-light p-4 rounded-4">
-            <div class="mb-3 text-primary fs-2"><i class="fa-solid fa-comments"></i></div>
-            <h5 class="fw-bold">{{ _t('feature_interview_title', 'Mock Interview Agent') }}</h5>
-            <p class="text-secondary small mb-0">{{ _t('feature_interview_desc', 'Generates tailored interview questions and evaluates your answers in real time with scoring.') }}</p>
-          </div>
-        </div>
-
-        <div class="col-md-4">
-          <div class="card h-100 border-0 bg-light p-4 rounded-4">
-            <div class="mb-3 text-primary fs-2"><i class="fa-solid fa-circle-nodes"></i></div>
-            <h5 class="fw-bold">Coordinator Orchestrator</h5>
-            <p class="text-secondary small mb-0">Coordinates the workflow in a single API call to prevent rate limiting,
-              feeding outputs into specialized agents for validation.</p>
-          </div>
-        </div>
-
-      </div>
-    </div>
-  </section>
   </main>
 
   <!-- Agent Progress Panel Overlay (Hidden by Default) -->
@@ -1180,8 +1278,8 @@
     <div class="modal-dialog modal-dialog-centered modal-lg">
       <div class="modal-content rounded-4 border-0 shadow">
         <div class="modal-header border-0 pb-0">
-          <h5 class="modal-title fw-bold" id="companyModalLabel"><i class="fa-solid fa-building text-primary me-2"></i>
-            Company Hiring Guide</h5>
+          <h4 class="modal-title fw-bold" id="companyModalLabel"><i class="fa-solid fa-building text-primary me-2"></i>
+            Company Hiring Guide</h4>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body p-4" id="companyModalBody">
@@ -1241,7 +1339,7 @@
                 <p class="text-secondary mb-3">{{ step.long_desc }}</p>
 
                 <div class="p-3 bg-light rounded-3 border mb-3">
-                  <h6 class="fw-bold text-dark small mb-2"><i class="fa-solid fa-star text-warning me-1"></i> Key Capabilities:</h6>
+                  <h5 class="fw-bold text-dark small mb-2"><i class="fa-solid fa-star text-warning me-1"></i> Key Capabilities:</h5>
                   <ul class="small text-muted mb-0 ps-3">
                     {% if step.id == 'resume_analysis' %}
                     <li>Instant ATS scoring (0-100) and grammar check.</li>

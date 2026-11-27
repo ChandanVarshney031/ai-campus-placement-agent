@@ -291,6 +291,28 @@ The browser test walks through the entire candidate journey without requiring li
    playwright show-trace test-results/.../trace.zip
    ```
 
+### OWASP ZAP Baseline Security Scan (#890)
+
+To ensure that newly contributed routes and templates maintain robust security headers, proper cookie flags, and secure input handling, an automated **OWASP ZAP Baseline Passive Scan** runs in CI and can be executed locally:
+
+```bash
+# Run local passive baseline scan
+python utils/zap_scanner.py --rules .zap/rules.tsv --report zap-report.html --json zap-report.json
+
+# Or run tests verifying rules and header enforcement
+pytest tests/test_zap_baseline_scan.py -v
+```
+
+If Docker is available, you can also run the official OWASP ZAP container:
+```bash
+docker run --rm -v $(pwd):/zap/wrk/:rw -t ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
+  -t http://host.docker.internal:5000 \
+  -c .zap/rules.tsv \
+  -r zap-report.html
+```
+
+For complete details on configuring `.zap/rules.tsv`, reviewing rules, and required written reasons for ignored rules, refer to [docs/ZAP_SECURITY_SCAN.md](docs/ZAP_SECURITY_SCAN.md).
+
 ### Route Organization & Where to Add New Routes (#553)
 
 The application has been refactored from a monolithic `app.py` into modular Flask Blueprints grouped by feature area inside the `routes/` package. **`app.py` is a thin entry point** exporting `app = create_app()` and should not have new routes added to it directly.

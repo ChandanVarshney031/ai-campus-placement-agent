@@ -51,7 +51,7 @@ def build_score_explanations(
     else:
         keyword_detail = "Few or no target skills were matched in the analysis."
 
-    ats_factors = [
+    ats_factors: List[Dict[str, Any]] = [
         {
             "title": "Relevant keywords and skills",
             "detail": keyword_detail,
@@ -85,7 +85,7 @@ def build_score_explanations(
         },
     ]
 
-    match_factors = [
+    match_factors: List[Dict[str, Any]] = [
         {
             "title": "Required skill coverage",
             "detail": (
