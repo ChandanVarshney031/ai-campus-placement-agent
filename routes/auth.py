@@ -353,6 +353,12 @@ def login():
         flask_session["auth_session_token"] = auth_session["token"]
         flask_session.permanent = True
 
+        try:
+            from utils.account_retention_service import cancel_account_deletion_on_login
+            cancel_account_deletion_on_login(user["id"])
+        except Exception:
+            pass
+
         flash("Login successful.", "success")
         next_page = request.args.get("next") or request.form.get("next")
         if next_page and next_page.startswith("/") and not next_page.startswith("//"):
@@ -423,6 +429,12 @@ def verify_two_factor():
                 flask_session["auth_session_token"] = auth_session["token"]
                 flask_session.permanent = True
 
+                try:
+                    from utils.account_retention_service import cancel_account_deletion_on_login
+                    cancel_account_deletion_on_login(user["id"])
+                except Exception:
+                    pass
+
                 flash(
                     f"Signed in using an emergency recovery code. This code has been consumed. {rec_msg}",
                     "warning"
@@ -449,6 +461,12 @@ def verify_two_factor():
                 flask_session["auth_session_id"] = auth_session["id"]
                 flask_session["auth_session_token"] = auth_session["token"]
                 flask_session.permanent = True
+
+                try:
+                    from utils.account_retention_service import cancel_account_deletion_on_login
+                    cancel_account_deletion_on_login(user["id"])
+                except Exception:
+                    pass
 
                 remaining_count = len(remaining_hashes)
                 flash(
@@ -481,6 +499,12 @@ def verify_two_factor():
             flask_session["auth_session_id"] = auth_session["id"]
             flask_session["auth_session_token"] = auth_session["token"]
             flask_session.permanent = True
+
+            try:
+                from utils.account_retention_service import cancel_account_deletion_on_login
+                cancel_account_deletion_on_login(user["id"])
+            except Exception:
+                pass
 
             flash("Two-factor authentication verified successfully. Welcome back!", "success")
             if next_page and next_page.startswith("/") and not next_page.startswith("//"):

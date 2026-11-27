@@ -1196,94 +1196,31 @@ def api_admin_feature_flag_audit_logs(flag_key: str):
     return jsonify({"success": True, "logs": logs}), 200
 
 
-# -----------------------------------------------------------------------------
-# Placement Cell Readiness Analytics (#886)
-# -----------------------------------------------------------------------------
-
-@admin_bp.route("/admin/readiness-analytics", methods=["GET"])
-@admin_bp.route("/admin/placement-readiness", methods=["GET"])
-def admin_readiness_analytics_view():
+@admin_bp.route("/api/admin/inactive-accounts/process", methods=["POST"])
+def api_admin_process_inactive_accounts():
     """
-    Renders privacy-preserving placement cell readiness analytics dashboard (#886).
-    Aggregates metrics by branch and graduation year.
-    Enforces minimum group size k-anonymity rule (default 5).
-    """
-    if not _check_admin_access():
-        if request.is_json or request.headers.get("Accept") == "application/json":
-            return jsonify({"success": False, "error": "Unauthorized: Administrator access required."}), 403
-        flash("Unauthorized: Administrator access required.", "error")
-        return redirect(url_for("auth.login"))
-
-    from utils.placement_readiness_service import PlacementReadinessService
-
-    dept = request.args.get("department")
-    year = request.args.get("graduation_year") or request.args.get("year")
-    min_size = request.args.get("min_group_size", 5, type=int)
-    if min_size < 1:
-        min_size = 5
-
-    data = PlacementReadinessService.get_readiness_analytics(
-        filter_department=dept,
-        filter_year=year,
-        min_group_size=min_size,
-    )
-    return render_template("admin_readiness_analytics.html", data=data)
-
-
-@admin_bp.route("/api/admin/readiness-analytics", methods=["GET"])
-def api_admin_readiness_analytics():
-    """
-    JSON API returning aggregated branch and batch year placement readiness metrics (#886).
-    Strict k-anonymity enforced; zero student PII returned.
+    Triggers automated retention evaluation for inactive accounts (#888).
+    Restricted to administrator access.
     """
     if not _check_admin_access():
         return jsonify({"success": False, "error": "Unauthorized: Administrator access required."}), 403
 
-    from utils.placement_readiness_service import PlacementReadinessService
-
-    dept = request.args.get("department")
-    year = request.args.get("graduation_year") or request.args.get("year")
-    min_size = request.args.get("min_group_size", 5, type=int)
-    if min_size < 1:
-        min_size = 5
-
-    data = PlacementReadinessService.get_readiness_analytics(
-        filter_department=dept,
-        filter_year=year,
-        min_group_size=min_size,
+    from utils.account_retention_service import process_inactive_accounts
+    payload = request.get_json(silent=True) or request.form.to_dict()
+    retention_days = (
+        payload.get("retention_days")
+        or payload.get("days")
+        or request.args.get("retention_days")
+        or request.args.get("days")
     )
-    return jsonify(data), 200
+    if retention_days is not None:
+        try:
+            retention_days = int(retention_days)
+        except (ValueError, TypeError):
+            retention_days = None
+    dry_run = bool(payload.get("dry_run") or request.args.get("dry_run"))
 
-
-@admin_bp.route("/admin/readiness-analytics/export.csv", methods=["GET"])
-def admin_readiness_analytics_export_csv():
-    """
-    Exports aggregated cohort readiness metrics to CSV with formula injection protection (#886).
-    """
-    if not _check_admin_access():
-        return jsonify({"success": False, "error": "Unauthorized: Administrator access required."}), 403
-
-    from utils.placement_readiness_service import PlacementReadinessService
-
-    dept = request.args.get("department")
-    year = request.args.get("graduation_year") or request.args.get("year")
-    min_size = request.args.get("min_group_size", 5, type=int)
-    if min_size < 1:
-        min_size = 5
-
-    csv_text = PlacementReadinessService.export_readiness_csv(
-        filter_department=dept,
-        filter_year=year,
-        min_group_size=min_size,
-    )
-
-    return Response(
-        csv_text,
-        mimetype="text/csv",
-        headers={
-            "Content-Disposition": "attachment; filename=placement_readiness_analytics.csv",
-            "Content-Type": "text/csv; charset=utf-8",
-        },
-    )
+    result = process_inactive_accounts(retention_days=retention_days, dry_run=dry_run)
+    return jsonify({"success": True, "result": result}), 200
 
 
